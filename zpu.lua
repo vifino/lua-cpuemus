@@ -205,7 +205,7 @@ function zpu.run(self)
 	-- assumed MMIO will happen there, so the processor bypasses caches.
 	-- For now, we're just using the behavior that would be used for
 	-- a naive processor, which is exactly what this is.
-	local op = split32(self:get32(self.rIP))[band(self.rIP, 3) + 1]
+	local op = split32(self:get32(band(self.rIP, 0xFFFFFFFC)))[band(self.rIP, 3) + 1]
 	local lim = self.fLastIM
 	self.fLastIM = false
 

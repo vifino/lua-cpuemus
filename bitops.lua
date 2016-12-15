@@ -261,7 +261,7 @@ local function fixup_rshift(rshift)
 end
 
 -- actual bit op assembly
-local bit32 = {} --get_bit32()
+local bit32 = get_bit32()
 local ljbit = bit and fixupall_signed(bit) or {}
 
 bitlib = bit_select({
