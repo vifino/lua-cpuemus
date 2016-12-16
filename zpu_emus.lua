@@ -147,8 +147,8 @@ end
 -- Actual emulates!
 -- Yay!
 
-make_emu(19, "LOADH", function(zpu_emu) zpu_emu:set32(zpu_emu.rSP, geth(zpu_emu, zpu_emu:get32(zpu_emu.rSP))) end)
-make_emu(20, "STOREH", function(zpu_emu) seth(zpu_emu, zpu_emu:v_pop(), zpu_emu:v_pop()) end)
+make_emu(2, "LOADH", function(zpu_emu) zpu_emu:set32(zpu_emu.rSP, geth(zpu_emu, zpu_emu:get32(zpu_emu.rSP))) end)
+make_emu(3, "STOREH", function(zpu_emu) seth(zpu_emu, zpu_emu:v_pop(), zpu_emu:v_pop()) end)
 
 make_pair(4, "LESSTHAN", function(a, b) return mkbool(sflip(a) < sflip(b)) end)
 make_pair(5, "LESSTHANEQUAL", function(a, b) return mkbool(sflip(a) <= sflip(b)) end)
