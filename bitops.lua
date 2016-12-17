@@ -31,10 +31,10 @@
 
 local bitlib
 
--- debug
-local _enable_debug = ...
+-- args and debug
+local force_fallback, enable_debug = ...
 local debug
-if _enable_debug then
+if enable_debug then
 	debug = function(msg) io.stderr:write(msg.."\n") end
 else
 	debug = function() end
@@ -196,6 +196,12 @@ function fallback.arshift(v, s)
 	if s <= 0 then return (x * 2^(-s)) % 0x100000000 end
 	if v < 0x80000000 then return mfloor(v / 2^s) % 0x100000000 end
 	return mfloor(v / 2^s) + (0x100000000 - 2^(32 - s))
+end
+
+-- exit early if we are supposed to only use the fallbacks
+if force_fallbacks then
+	debug("bitops: Forced fallback. Hope you know what you are doing.")
+	return fallback
 end
 
 -- Fixups!

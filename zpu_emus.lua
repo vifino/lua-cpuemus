@@ -107,7 +107,7 @@ local function gpi_shift(v, lShift)
 end
 -- Generic multifunction shifter. Should handle any case with ease.
 local function gp_shift(v, lShift, arithmetic)
-	arithmetic = arithmetica and band(v, 0x80000000) ~= 0
+	arithmetic = arithmetic and band(v, 0x80000000) ~= 0
 	v = gpi_shift(v, lShift)
 	if arithmetic and (lShift < 0) then
 		return bor(v, bxor(gpi_shift(0xFFFFFFFF, lShift), 0xFFFFFFFF))

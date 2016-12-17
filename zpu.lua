@@ -214,13 +214,14 @@ function zpu.run(self)
 	-- For a few ifs, it would probably be slower. But for many, it is faster on average.
 	local opimpl = op_table_basic[op]
 	if opimpl then
-		return opimpl(self)
+		return opimpl(self), op
 	end
 
 	opimpl = op_table_advanced[band(op, 0x80)] or op_table_advanced[band(op, 0xE0)] or op_table_advanced[(band(op, 0xF0))]
 	if opimpl then -- "advanced" op
-		return opimpl(self, op, lim)
+		return opimpl(self, op, lim), op
 	end
+	return nil, op
 end
 
 function zpu.run_trace(self, fh, tracestack)
@@ -232,13 +233,13 @@ function zpu.run_trace(self, fh, tracestack)
 		cSP = cSP + 4
 	end
 	fh:write(") :")
-	local op = self:run()
+	local op, opb = self:run()
 	if op == nil then
 		fh:write("UNKNOWN\n")
 	else
 		fh:write(op .. "\n")
 	end
-	return op
+	return op, opb
 end
 
 -- Create a new ZPU instance

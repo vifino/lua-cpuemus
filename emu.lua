@@ -51,7 +51,9 @@ local function get32(zpu_inst, i)
 		return 0x100
 	elseif i == 0x80000028 then
 		-- UART(I)
-		return bitops.bor(string.byte(io.read(1)), 0x100)
+		local inp = io.read(1)
+		local ret = inp and string.byte(inp) or 0
+		return bitops.bor(ret, 0x100)
 	end
 
 	-- big endian referred to as the "native format" in docs.
