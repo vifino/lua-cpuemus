@@ -164,7 +164,7 @@ local function op_flip(self)
 	self:v_push(bor(bor(lshift(d, 24), lshift(c, 16)), bor(lshift(b, 8), a)))
 end
 function zpu.op_emulate(self, op)
-	self:v_push(self.rIP + 1)
+	self:v_push(band(self.rIP + 1, 0xFFFFFFFF))
 	self.rIP = lshift(op, 5)
 	return "EMULATE ".. op .. "/" .. bor(op, 0x20)
 end
