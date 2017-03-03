@@ -1,5 +1,7 @@
 -- ZPU Emulator: Example usage.
 
+local arg = arg or {...}
+
 local fname = arg[1]
 if not fname then
 	error("Need filename")
@@ -20,7 +22,7 @@ end
 f:close()
 
 -- Load bitops
-local bitops = loadfile("bitops.lua")(false)
+local bitops = loadfile("bitops.lua")(false, true)
 -- Load ZPU
 local zpu = dofile("zpu.lua")
 -- Install bitops

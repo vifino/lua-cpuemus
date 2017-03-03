@@ -53,6 +53,8 @@ local function get_bit32()
 	return {}
 end
 
+local loadstring = loadstring or load
+
 local function bit_l52(op, single)
 	if not single then
 		return loadstring("return function(a, b) return a "..op.." b end end")
@@ -199,7 +201,7 @@ function fallback.arshift(v, s)
 end
 
 -- exit early if we are supposed to only use the fallbacks
-if force_fallbacks then
+if force_fallback then
 	debug("bitops: Forced fallback. Hope you know what you are doing.")
 	return fallback
 end
@@ -239,7 +241,7 @@ local function fixup_lshift(lshift)
 		end
 	end
 	if lshift(1, 32) == 1 then
-		debug("bitops: lshift wraps at 32")
+		debug("bitops: lshift wraps at 32, patched.")
 		return function(v, s)
 			if s > 31 then return 0 end
 			return nlshift(v, s)
@@ -251,7 +253,7 @@ end
 local function fixup_rshift(rshift)
 	local nrshift = rshift
 	if rshift(1, 32) == 1 then
-		debug("bitops: rshift wraps at 32")
+		debug("bitops: rshift wraps at 32, patched.")
 		nrshift = function(v, s)
 			if s > 31 then return 0 end
 			return rshift(v, s)

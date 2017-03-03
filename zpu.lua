@@ -120,7 +120,7 @@ local function op_storesp(self, i)
 end
 local function op_addsp(self, i)
 	local addr = band(self.rSP + lshift(i, 2), 0xFFFFFFFC)
-	self:v_push(band(self:get32(addr) + self:v_pop()), 0xFFFFFFFF)
+	self:v_push(band(self:get32(addr) + self:v_pop(), 0xFFFFFFFF))
 end
 local function op_load(self)
 	self:set32(self.rSP, self:get32(band(self:get32(self.rSP), 0xFFFFFFFC)))
