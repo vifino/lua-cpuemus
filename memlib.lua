@@ -113,11 +113,32 @@ function _M.backend.table(memsz, prealloc)
 		get = fns_tbackend.get,
 		size = memsz
 	}
+	
+	local meta = {
+		__index = function(t, i)
+			local v = memory[i]
+			if v == nil then
+				return 0
+			else
+				return v
+			end
+		end,
+		__nextindex = function(t, i, v)
+			if v == 0 then
+				v = nil
+			end
+			memory[i] = v
+		end
+	}
+	
+	setmetatable({}, mt_tbackend)
+	
 	if prealloc then
 		for i = 0, memsz do
 			memory[i] = 0
 		end
 	end
+	
 	return memory
 end
 
