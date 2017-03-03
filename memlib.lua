@@ -15,7 +15,7 @@ local function and32(v, addr)
 	return band(v, 0xFFFFFFFF)
 end
 
-local function comb4b(a, b, c, d)
+local function comb4b_be(a, b, c, d)
 	return bor(bor(blshift(a, 24), blshift(b, 16)), bor(blshift(c, 8), d))
 end
 
@@ -33,7 +33,7 @@ local function get32_get(memory, i)
 	local b = memory:get(i+1)
 	local c = memory:get(i+2)
 	local d = memory:get(i+3)
-	return comb4b(a, b, c, d)
+	return comb4b_be(a, b, c, d)
 end
 
 local function get_get32(memory, i)
@@ -51,7 +51,7 @@ end
 
 local function set_set32(memory, i, v)
 	local a, b, c, d = memory:get32(i)
-	memory:set32(i, comb4b(v, b, c, d))
+	memory:set32(i, comb4b_be(v, b, c, d))
 end
 
 -- Public Helpers
@@ -77,7 +77,7 @@ local fns_tbackend = {
 		local b = memory[and32(i + 1)] or 0
 		local c = memory[and32(i + 2)] or 0
 		local d = memory[and32(i + 3)] or 0
-		return comb4b(a, b, c, d)
+		return comb4b_be(a, b, c, d)
 	end,
 	set32be = function(memory, i, v)
 		if ((memory.size - 3) < i) or (0 > i) then
@@ -118,7 +118,6 @@ function _M.backend.table(memsz, prealloc)
 			memory[i] = 0
 		end
 	end
-	setmetatable(memory, mt_tbackend)
 	return memory
 end
 
