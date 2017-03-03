@@ -201,7 +201,7 @@ function fallback.arshift(v, s)
 end
 
 -- exit early if we are supposed to only use the fallbacks
-if force_fallback then
+if force_fallback == true then
 	debug("bitops: Forced fallback. Hope you know what you are doing.")
 	return fallback
 end

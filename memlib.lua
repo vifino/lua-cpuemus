@@ -66,6 +66,16 @@ end
 
 -- Simplistic table backend.
 -- Loads of overhead. But works. And is okay fast.
+local function setifeanz(t, k, v)
+	if v == 0 then
+		if t[k] then
+			t[k] = nil
+		end
+	else
+		t[k] = v
+	end
+end
+
 local fns_tbackend = {
 	get32be = function(memory, i)
 		i = band(i, 0xFFFFFFFC)
@@ -84,10 +94,16 @@ local fns_tbackend = {
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
 
-		memory[i] = band(brshift(v, 24), 0xFF)
-		memory[and32(i + 1)] = band(brshift(v, 16), 0xFF)
-		memory[and32(i + 2)] = band(brshift(v, 8), 0xFF)
-		memory[and32(i + 3)] = band(v, 0xFF)
+		local a = band(brshift(v, 24), 0xFF)
+		setifeanz(memory, i, a)
+		local b = band(brshift(v, 16), 0xFF)
+		setifeanz(memory, and32(i + 1), b)
+
+		local c = band(brshift(v, 8), 0xFF)
+		setifeanz(memory, and32(i + 2), c)
+
+		local d = band(v, 0xFF)
+		setifeanz(memory, and32(i + 3), d)
 	end,
 
 
@@ -101,7 +117,7 @@ local fns_tbackend = {
 		if (memory.size < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-		memory[i] = v
+		setifeanz(memory, i, v)
 	end
 }
 
