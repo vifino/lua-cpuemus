@@ -123,7 +123,7 @@ function _M.backend.table(memsz, prealloc)
 				return v
 			end
 		end,
-		__nextindex = function(t, i, v)
+		__newindex = function(t, i, v)
 			if v == 0 then
 				v = nil
 			end
@@ -131,7 +131,7 @@ function _M.backend.table(memsz, prealloc)
 		end
 	}
 	
-	setmetatable({}, mt_tbackend)
+	setmetatable({}, meta)
 	
 	if prealloc then
 		for i = 0, memsz do
