@@ -24,14 +24,12 @@ zpu:apply(zpu_emulates)
 
 local memlib = require("memlib")
 
--- Memory
-local mem = memlib.backend.table(memsz+3)
-
+-- Memory: ROM, RAM and peripherals.
 local t = f:read(memsz)
-for i = 1, t:len() do
-	mem:set(i - 1, string.byte(t, i))
-end
+local rom = memlib.backend.rostring(t, memsz)
 f:close()
+
+local mem = memlib.backend.rwoverlay(rom, memsz)
 
 -- Address handlers/Peripherals
 local addr_handlers = {}

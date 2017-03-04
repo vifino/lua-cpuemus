@@ -8,6 +8,7 @@ local _M = {
 
 local bitops = require("bitops")
 local band, bor, blshift, brshift = bitops.band, bitops.bor, bitops.lshift, bitops.rshift
+local strbyte, strsub, strfind = string.byte, string.sub, string.find
 
 -- Helpers.
 local function and32(v, addr)
@@ -78,7 +79,6 @@ end
 
 local fns_tbackend = {
 	get32be = function(memory, i)
-		i = band(i, 0xFFFFFFFC)
 		if ((memory.size - 3) < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
@@ -135,6 +135,130 @@ function _M.backend.table(memsz, prealloc)
 		end
 	end
 	return memory
+end
+
+-- Simple read-only string backend.
+-- Incapable of writing, but efficient for readonly operation!
+local function rostr_get(memory, i)
+	i = i + 1
+	if (i < memory.start_off) or (i > memory.end_pos) then return 0 end
+	i = i - memory.start_off
+	return strbyte(strsub(memory.str, i, i))
+end
+
+local function rostr_werr()
+	error("rostring memory backend is incapable of writing.")
+end
+
+local function rostr_stripleadingnulls(str)
+	local _, l2 = strfind(str, "^[^\x01-\xFF]+")
+	if (not l2) or l2 == 0 then return 0, str end
+	return l2, strsub(str, l2+1)
+end
+
+local function rostr_striptrailingnulls(str)
+	local _, l2 = strfind(str, "[^\x01-\xFF]+$")
+	if not l2 then return 0, str end
+	return l2, strsub(str, 1, l2)
+end
+
+local fns_rostring = {
+	get = function(memory, i)
+		if (memory.size < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+		return rostr_get(memory, i)
+	end,
+	get32be = function(memory, i)
+		if ((memory.size - 3) < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+	
+		local a = rostr_get(memory, i)
+		local b = rostr_get(memory, and32(i + 1))
+		local c = rostr_get(memory, and32(i + 2))
+		local d = rostr_get(memory, and32(i + 3))
+		return comb4b_be(a, b, c, d)
+	end,
+}
+
+function _M.backend.rostring(string, memsz)
+	local size = memsz or #string
+	local start_off, end_pos
+	start_off, string = rostr_stripleadingnulls(string)
+	end_pos, string = rostr_striptrailingnulls(string)
+	return {
+		str = string,
+		size = size,
+		start_off = start_off,
+		end_pos = end_pos,
+
+		get = fns_rostring.get,
+		get32be = fns_rostring.get32be,
+
+		-- Incapable of writing
+		set = rostr_werr,
+		set32be = rostr_werr,
+	}
+end
+
+-- Read/Write overlay for existing memory backend.
+-- Useful for ROM/RAM.
+local function rwovl_read(romem, ovlt, i)
+	local val = ovlt[i]
+	if not val then
+		return romem:get(i)
+	end
+	return val		
+end
+
+local fns_rwovl = {
+	get32be = function(memory, i)
+		if ((memory.size - 3) < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+	
+		local a = rwovl_read(memory.romem, memory, i)
+		local b = rwovl_read(memory.romem, memory, and32(i + 1))
+		local c = rwovl_read(memory.romem, memory, and32(i + 2))
+		local d = rwovl_read(memory.romem, memory, and32(i + 3))
+		return comb4b_be(a, b, c, d)
+	end,
+	set32be = function(memory, i, v)
+		if ((memory.size - 3) < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+
+		memory[i] = band(brshift(v, 24), 0xFF)
+		memory[and32(i + 1)] = band(brshift(v, 16), 0xFF)
+		memory[and32(i + 2)] = band(brshift(v, 8), 0xFF)
+		memory[and32(i + 3)] = band(v, 0xFF)
+	end,
+
+
+	get = function(memory, i)
+		if (memory.size < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+		return rwovl_read(memory.romem, memory, i)
+	end,
+	set = function(memory, i, v)
+		if (memory.size < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+		memory[i] = v
+	end
+}
+
+function _M.backend.rwoverlay(existing_mem, memsz)
+	return {
+		romem = existing_mem,
+		get32be = fns_rwovl.get32be,
+		set32be = fns_rwovl.set32be,
+		set = fns_rwovl.set,
+		get = fns_rwovl.get,
+		size = memsz or existing_mem.size,
+	}
 end
 
 -- Memory block composition.
