@@ -82,7 +82,7 @@ local fns_tbackend = {
 		if ((memory.size - 3) < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-	
+
 		local a = memory[i] or 0
 		local b = memory[and32(i + 1)] or 0
 		local c = memory[and32(i + 2)] or 0
@@ -173,7 +173,7 @@ local fns_rostring = {
 		if ((memory.size - 3) < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-	
+
 		local a = rostr_get(memory, i)
 		local b = rostr_get(memory, and32(i + 1))
 		local c = rostr_get(memory, and32(i + 2))
@@ -185,12 +185,12 @@ local fns_rostring = {
 function _M.backend.rostring(string, memsz)
 	local size = memsz or #string
 	local start_off, end_pos
-	start_off, string = rostr_stripleadingnulls(string)
+	--start_off, string = rostr_stripleadingnulls(string) -- pretty useless.
 	end_pos, string = rostr_striptrailingnulls(string)
 	return {
 		str = string,
 		size = size,
-		start_off = start_off,
+		start_off = 0,
 		end_pos = end_pos,
 
 		get = fns_rostring.get,
@@ -209,7 +209,7 @@ local function rwovl_read(romem, ovlt, i)
 	if not val then
 		return romem:get(i)
 	end
-	return val		
+	return val
 end
 
 local fns_rwovl = {
@@ -217,7 +217,7 @@ local fns_rwovl = {
 		if ((memory.size - 3) < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-	
+
 		local a = rwovl_read(memory.romem, memory, i)
 		local b = rwovl_read(memory.romem, memory, and32(i + 1))
 		local c = rwovl_read(memory.romem, memory, and32(i + 2))
@@ -283,7 +283,7 @@ function _M.compose(memory, addrhandlers, handlers)
 		addr_handlers = addrhandlers or {},
 		handlers = handlers or {},
 	}
-	
+
 	setmetatable(composed, {__index=function(this, name)
 		local fn = function(self, i, v)
 			return run_handlers(self, name, i, v)

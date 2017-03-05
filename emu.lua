@@ -11,7 +11,6 @@ if err then error(err) end
 
 local memsz = 0x80000
 
-
 -- Load bitops
 local bitops = loadfile("bitops.lua")(false, true)
 -- Load ZPU
@@ -39,7 +38,7 @@ addr_handlers[0x80000024] = function(comp, method, i, v)
 	if method == "set32be" then
 		io.write(string.char(bitops.band(v, 0xFF)))
 		io.flush()
-		return			
+		return
 	end
 end
 

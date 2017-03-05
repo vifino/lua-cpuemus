@@ -6,27 +6,27 @@
 -- and if all before fail, it'll use pure lua fallbacks.
 
 --[[
-  The MIT License (MIT)
+	The MIT License (MIT)
 
-  Copyright (c) 2016 Adrian Pistol
+	Copyright (c) 2016 Adrian Pistol
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
 --]]
 
 local bitlib
@@ -150,7 +150,7 @@ function fallback.band(a, b)
 	-- However, there are a lot of cases where the "convert to bit32" behavior is used.
 	-- Which are currently rather slow in the "no need to convert" case.
 	-- These neatly cover a good portion of these "there was no need to do this" cases,
-	--  speeds things up enormously.
+	-- speeds things up enormously.
 
 	if (b == 0xFFFFFFFF) and (a >= 0) and (a <= 0xFFFFFFFF) then return mfloor(a) end
 	if (a == 0xFFFFFFFF) and (b >= 0) and (b <= 0xFFFFFFFF) then return mfloor(b) end

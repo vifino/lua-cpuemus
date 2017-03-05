@@ -7,27 +7,27 @@
 -- zpu:apply(require("zpu_emus")) -- now globally loaded.
 
 --[[
-  The MIT License (MIT)
+	The MIT License (MIT)
 
-  Copyright (c) 2016 Adrian Pistol
+	Copyright (c) 2016 Adrian Pistol
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files (the "Software"), to deal
-  in the Software without restriction, including without limitation the rights
-  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-  copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
+	Permission is hereby granted, free of charge, to any person obtaining a copy
+	of this software and associated documentation files (the "Software"), to deal
+	in the Software without restriction, including without limitation the rights
+	to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+	copies of the Software, and to permit persons to whom the Software is
+	furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in all
-  copies or substantial portions of the Software.
+	The above copyright notice and this permission notice shall be included in all
+	copies or substantial portions of the Software.
 
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
+	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+	SOFTWARE.
 --]]
 
 
@@ -91,7 +91,7 @@ local function seth(zpu_emu, a, v)
 end
 
 local function eqbranch(zpu_emu, bcf)
-	local br = zpu_emu.rIP + zpu_emu:v_pop()
+	local br = a32(zpu_emu.rIP + zpu_emu:v_pop())
 	if bcf(zpu_emu:v_pop()) then
 		zpu_emu.rIP = br
 	else
@@ -147,8 +147,8 @@ end
 -- Actual emulates!
 -- Yay!
 
-make_emu(2, "LOADH", function(zpu_emu) zpu_emu:set32(zpu_emu.rSP, geth(zpu_emu, zpu_emu:get32(zpu_emu.rSP))) end)
-make_emu(3, "STOREH", function(zpu_emu) seth(zpu_emu, zpu_emu:v_pop(), zpu_emu:v_pop()) end)
+make_emu(2, "LOADH", function(zpu_emu) zpu_emu:set32(zpu_emu.rSP, geth(zpu_emu, zpu_emu:get32(zpu_emu.rSP))) advip(zpu_emu) end)
+make_emu(3, "STOREH", function(zpu_emu) seth(zpu_emu, zpu_emu:v_pop(), zpu_emu:v_pop()) advip(zpu_emu) end)
 
 make_pair(4, "LESSTHAN", function(a, b) return mkbool(sflip(a) < sflip(b)) end)
 make_pair(5, "LESSTHANEQUAL", function(a, b) return mkbool(sflip(a) <= sflip(b)) end)
