@@ -98,15 +98,15 @@ zpu.v_pop = v_pop
 -- OPs!
 local function op_im(self, i, last)
 	if last then
-		self:v_push(bor(lshift(band(self:v_pop(), 0x1FFFFFFF), 7), i))
+		v_push(self, bor(lshift(band(v_pop(self), 0x1FFFFFFF), 7), i))
 	else
 		if band(i, 0x40) ~= 0 then i = bor(i, 0xFFFFFF80) end
-		self:v_push(i)
+		v_push(self, i)
 	end
 end
 local function op_loadsp(self, i)
 	local addr = band(self.rSP + lshift(bxor(i, 0x10), 2), 0xFFFFFFFC)
-	self:v_push(self:get32(addr))
+	v_push(self, self:get32(addr))
 end
 local function op_storesp(self, i)
 	-- Careful with the ordering! Documentation suggests the OPPOSITE of what it should be!
@@ -116,30 +116,30 @@ local function op_storesp(self, i)
 	-- This should leave zpuinst.rSP + 4 on stack.
 	-- You can work it out from the sources linked.
 	local bsp = band(self.rSP + lshift(bxor(i, 0x10), 2), 0xFFFFFFFC)
-	self:set32(bsp, self:v_pop())
+	self:set32(bsp, v_pop(self))
 end
 local function op_addsp(self, i)
 	local addr = band(self.rSP + lshift(i, 2), 0xFFFFFFFC)
-	self:v_push(band(self:get32(addr) + self:v_pop(), 0xFFFFFFFF))
+	v_push(self, band(self:get32(addr) + v_pop(self), 0xFFFFFFFF))
 end
 local function op_load(self)
 	self:set32(self.rSP, self:get32(band(self:get32(self.rSP), 0xFFFFFFFC)))
 end
 local function op_store(self)
-	self:set32(band(self:v_pop(), 0xFFFFFFFC), self:v_pop())
+	self:set32(band(v_pop(self), 0xFFFFFFFC), v_pop(self))
 end
 local function op_add(self)
-	local a = self:v_pop()
+	local a = v_pop(self)
 	self:set32(self.rSP, band(a + self:get32(self.rSP), 0xFFFFFFFF))
 end
 local function op_and(self)
-	self:v_push(band(self:v_pop(), self:v_pop()))
+	v_push(self, band(v_pop(self), v_pop(self)))
 end
 local function op_or(self)
-	self:v_push(bor(self:v_pop(), self:v_pop()))
+	v_push(self, bor(v_pop(self), v_pop(self)))
 end
 local function op_not(self)
-	self:v_push(bnot(self:v_pop()))
+	v_push(self, bnot(v_pop(self)))
 end
 
 local op_flip_tb = {
@@ -156,15 +156,15 @@ local function op_flip_byte(i)
 	return bor(bor(a, lshift(b, 2)), bor(lshift(c, 4), lshift(d, 6)))
 end
 local function op_flip(self)
-	local v = self:v_pop()
+	local v = v_pop(self)
 	local a = op_flip_byte(band(rshift(v, 24), 0xFF))
 	local b = op_flip_byte(band(rshift(v, 16), 0xFF))
 	local c = op_flip_byte(band(rshift(v, 8), 0xFF))
 	local d = op_flip_byte(band(v, 0xFF))
-	self:v_push(bor(bor(lshift(d, 24), lshift(c, 16)), bor(lshift(b, 8), a)))
+	v_push(self, bor(bor(lshift(d, 24), lshift(c, 16)), bor(lshift(b, 8), a)))
 end
 function zpu.op_emulate(self, op)
-	self:v_push(band(self.rIP + 1, 0xFFFFFFFF))
+	v_push(self, band(self.rIP + 1, 0xFFFFFFFF))
 	self.rIP = lshift(op, 5)
 	return "EMULATE ".. op .. "/" .. bor(op, 0x20)
 end
@@ -176,11 +176,11 @@ end
 -- OP lookup tables
 local op_table_basic = {
 	-- basic ops
-	[0x04] = function(self) self.rIP = self:v_pop() return "POPPC" end,
+	[0x04] = function(self) self.rIP = v_pop(self) return "POPPC" end,
 	[0x08] = function(self) op_load(self) ip_adv(self) return "LOAD" end,
 	[0x0C] = function(self) op_store(self) ip_adv(self) return "STORE" end,
-	[0x02] = function(self) self:v_push(self.rSP) ip_adv(self) return "PUSHSP" end,
-	[0x0D] = function(self) self.rSP = band(self:v_pop(), 0xFFFFFFFC) ip_adv(self) return "POPSP" end,
+	[0x02] = function(self) v_push(self, self.rSP) ip_adv(self) return "PUSHSP" end,
+	[0x0D] = function(self) self.rSP = band(v_pop(self), 0xFFFFFFFC) ip_adv(self) return "POPSP" end,
 	[0x05] = function(self) op_add(self) ip_adv(self) return "ADD" end,
 	[0x06] = function(self) op_and(self) ip_adv(self) return "AND" end,
 	[0x07] = function(self) op_or(self) ip_adv(self) return "OR" end,

@@ -63,7 +63,7 @@ local function bit_l52(op, single)
 end
 
 -- pick bit op from a list of candidates
-local function bit_pick_fn(res, fn_list)
+local function bit_pick_fn(name, res, fn_list)
 	for fni=1, #fn_list do
 		local fn = fn_list[fni]
 		if fn then
@@ -72,7 +72,7 @@ local function bit_pick_fn(res, fn_list)
 				if ret == res then
 					return fn
 				end
-				debug("bitops: Tried candidate no. "..tostring(fni)..", yielded "..tostring(ret).." but wanted "..tostring(res))
+				debug("bitops: "..name..": Tried candidate no. "..tostring(fni)..", yielded "..tostring(ret).." but wanted "..tostring(res))
 			end
 		end
 	end
@@ -83,7 +83,7 @@ local function bit_select(inst_tests)
 	local lib = {}
 	for inst, candidates in pairs(inst_tests) do
 		local name, test, fixup = inst[1], inst[2], inst[3]
-		local tmp = bit_pick_fn(test, candidates)
+		local tmp = bit_pick_fn(name, test, candidates)
 		if not tmp then
 			error("bitops: No working candidate for "..name)
 		end
@@ -261,8 +261,9 @@ local function fixup_rshift(rshift)
 	end
 	if rshift(0x80000000, 24) ~= 128 then
 		debug("bitops: rshift was arithmetic, this is really bad. Still, this is known now - Speed gains can still be gotten.")
+		local band = bitlib.band
 		return function(v, s)
-			return bitlib.band(nrshift(v, s), nrshift(0xFFFFFFFF, s))
+			return band(nrshift(v, s), nrshift(0xFFFFFFFF, s))
 		end
 	end
 	return nrshift

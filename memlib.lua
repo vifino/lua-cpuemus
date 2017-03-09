@@ -266,10 +266,11 @@ local function run_handlers(self, method, i, v)
 	local addr_handler = self.addr_handlers[i]
 	if addr_handler then return addr_handler(self, method, i, v) end
 
-	local hlen = #self.handlers
+	local handlers = self.handlers
+	local hlen = #handlers
 	if hlen < 0 then
 		for i=1, hlen do
-			local res = self.handlers[i](self, method, i, v)
+			local res = handlers[i](self, method, i, v)
 			if res then return res end
 		end
 	end
