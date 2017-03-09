@@ -1,12 +1,6 @@
-#!/usr/bin/env lua
 -- ZPU Emulator: Example usage.
 
-local arg = arg or {...}
-
-local fname = arg[1]
-if not fname then
-	error("Need filename")
-end
+local fname = "tests/reb_old.bin" -- old version of reb, quite slow.
 local f, err = io.open(fname, "rb")
 if err then error(err) end
 
@@ -65,5 +59,7 @@ end
 local zpu_inst = zpu.new(get32, set32)
 zpu_inst.rSP = memsz
 
+local st = os.clock()
 while zpu_inst:run() do
 end
+print("Ran for "..tostring(os.clock()-st).."s.")
