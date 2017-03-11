@@ -93,7 +93,7 @@ function _M.run(instance)
 	if not opl then
 		error(fmt("l8080: Unknown OP 0x%02x", op))
 	end
-	callop(inst, op, PC)
+	callop(inst, op, pc)
 	inst.PC = pc + opl
 	return opnames[op]
 end

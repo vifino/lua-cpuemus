@@ -61,6 +61,7 @@ local ops = {
 	[0x05] = function(s) s.B = flaghandle(s, s.B - 1) end, -- DCR B
 	[0x06] = function(s, b) s.B = b end, -- MVI B, D8
 	-- Missing 0x07: RLC
+	[0x08] = function(s)  end, -- NOP
 	[0x09] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.B, s.C)) end, -- DAD B
 	[0x0a] = function(s) s.A = s:getb(pair(s.B, s.C)) end, -- LDAX B
 	[0x0b] = function(s) local t = s.C - 1 if a8(t) == 0xFF then B = a8(B - 1) end s.C = t end, -- DCX B
@@ -68,6 +69,7 @@ local ops = {
 	[0x0d] = function(s) s.C = flaghandle(s, s.C - 1) end, -- DCR C
 	[0x0e] = function(s, b) s.C = b end, -- MVI C,D8
 	-- Missing 0x0f: RRC
+	[0x10] = function(s)  end, -- NOP
 	[0x11] = function(s, b2, b3) s.D = b3 s.E = b2 end, -- LXI D,D16
 	[0x12] = function(s) s:setb(pair(s.D, s.E), s.A) end, -- STAX D
 	[0x13] = function(s) local t = s.E + 1 if a8(t) == 0 then D = a8(D + 1) end s.E = t end, -- INX D
@@ -75,6 +77,7 @@ local ops = {
 	[0x15] = function(s) s.D = flaghandle(s, s.D - 1) end, -- DCR D
 	[0x16] = function(s, b) s.D = b end, -- MVI D, D8
 	-- Missing 0x17: RAL
+	[0x18] = function(s)  end, -- NOP
 	[0x19] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.D, s.E)) end, -- DAD D
 	[0x1a] = function(s) s.A = s:getb(pair(s.D, s.E)) end, -- LDAX D
 	[0x1b] = function(s) local t = s.E - 1 if a8(t) == 0xFF then D = a8(D - 1) end s.E = t end, -- DCX D
@@ -82,7 +85,7 @@ local ops = {
 	[0x1d] = function(s) s.E = flaghandle(s, s.E - 1) end, -- DCR E
 	[0x1e] = function(s, b) s.E = b end, -- MVI E,D8
 	-- Missing 0x1f: RAR
-	-- Missing 0x20: RIM
+	[0x20] = function(s)  end, -- NOP
 	[0x21] = function(s, b2, b3) s.H = b3 s.L = b2 end, -- LXI H,D16
 	-- Missing 0x22: SHLD adr
 	[0x23] = function(s) local t = s.L + 1 if a8(t) == 0 then H = a8(H + 1) end s.L = t end, -- INX H
@@ -90,6 +93,7 @@ local ops = {
 	[0x25] = function(s) s.H = flaghandle(s, s.H - 1) end, -- DCR H
 	[0x26] = function(s, b) s.H = b end, -- MVI H,D8
 	-- Missing 0x27: DAA
+	[0x28] = function(s)  end, -- NOP
 	[0x29] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.H, s.L)) end, -- DAD H
 	-- Missing 0x2a: LHLD adr
 	[0x2b] = function(s) local t = s.L - 1 if a8(t) == 0xFF then H = a8(H - 1) end s.L = t end, -- DCX H
@@ -97,7 +101,7 @@ local ops = {
 	[0x2d] = function(s) s.L = flaghandle(s, s.L - 1) end, -- DCR L
 	[0x2e] = function(s, b) s.L = b end, -- MVI L, D8
 	-- Missing 0x2f: CMA
-	-- Missing 0x30: SIM
+	[0x30] = function(s)  end, -- NOP
 	[0x31] = function(s, b2, b3) s.SP = pair(b3, b2) end, -- LXI SP, D16
 	-- Missing 0x32: STA adr
 	[0x33] = function(s) local t = s.SP + 1 if a8(t) == 0 then SP = a8(SP + 1) end s.SP = t end, -- INX SP
@@ -105,6 +109,7 @@ local ops = {
 	[0x35] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandlency(s, s:getb(loc) - 1)) end, -- DCR M
 	[0x36] = function(s) s:setb(pair(s.H, s.L), b) end, -- MVI M,D8
 	-- Missing 0x37: STC
+	[0x38] = function(s)  end, -- NOP
 	[0x39] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + s.SP) end, -- DAD SP
 	-- Missing 0x3a: LDA adr
 	[0x3b] = function(s) local t = s.SP - 1 if a8(t) == 0xFF then SP = a8(SP - 1) end s.SP = t end, -- DCX SP
@@ -251,6 +256,7 @@ local ops = {
 	-- Missing 0xc8: RZ
 	-- Missing 0xc9: RET
 	-- Missing 0xca: JZ adr
+	-- Missing 0xcb: JMP adr
 	-- Missing 0xcc: CZ adr
 	-- Missing 0xcd: CALL adr
 	-- Missing 0xce: ACI D8
@@ -264,9 +270,11 @@ local ops = {
 	[0xd6] = function(s, b) s.A = flaghandle(s, s.A - b - (s.cy and 1 or 0)) end, -- SUI D8
 	-- Missing 0xd7: RST 2
 	-- Missing 0xd8: RC
+	-- Missing 0xd9: RET
 	-- Missing 0xda: JC adr
 	-- Missing 0xdb: IN D8
 	-- Missing 0xdc: CC adr
+	-- Missing 0xdd: CALL adr
 	[0xde] = function(s, b) s.A = flaghandle(s, s.A - b) end, -- SBI D8
 	-- Missing 0xdf: RST 3
 	-- Missing 0xe0: RPO
@@ -282,6 +290,7 @@ local ops = {
 	-- Missing 0xea: JPE adr
 	-- Missing 0xeb: XCHG
 	-- Missing 0xec: CPE adr
+	-- Missing 0xed: CALL adr
 	[0xee] = function(s, b) s.A = flaghandle(s, bxor(s.A, b)) end, -- XRI D8
 	-- Missing 0xef: RST 5
 	-- Missing 0xf0: RP
@@ -297,6 +306,7 @@ local ops = {
 	-- Missing 0xfa: JM adr
 	-- Missing 0xfb: EI
 	-- Missing 0xfc: CM adr
+	-- Missing 0xfd: CALL adr
 	-- Missing 0xfe: CPI D8
 	-- Missing 0xff: RST 7
 }
