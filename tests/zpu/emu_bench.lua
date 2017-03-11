@@ -1,6 +1,6 @@
 -- ZPU Emulator: Example usage.
 
-local fname = "tests/reb_old.bin" -- old version of reb, quite slow.
+local fname = "tests/zpu/reb_old.bin" -- old version of reb, quite slow.
 local f, err = io.open(fname, "rb")
 if err then error(err) end
 
