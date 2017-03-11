@@ -115,7 +115,7 @@ local opfnargs = {
 	MR = ")",
 	MB = ")",
 	B = ", b)",
-	X = "b2, b3) local addr = pair(B2, B3)"
+	X = ", b2, b3) local addr = pair(b2, b3)"
 }
 
 local opfnregs = {

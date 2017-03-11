@@ -247,23 +247,23 @@ local ops = {
 	-- Missing 0xbf: CMP A
 	-- Missing 0xc0: RNZ
 	-- Missing 0xc1: POP B
-	[0xc2] = function(sb2, b3) local addr = pair(B2, B3) if s.z == false then s.PC = addr - 3 end end, -- JNZ adr
-	[0xc3] = function(sb2, b3) local addr = pair(B2, B3) s.PC = addr - 3 end, -- JMP adr
+	[0xc2] = function(s, b2, b3) local addr = pair(b2, b3) if s.z == false then s.PC = addr - 3 end end, -- JNZ adr
+	[0xc3] = function(s, b2, b3) local addr = pair(b2, b3) s.PC = addr - 3 end, -- JMP adr
 	-- Missing 0xc4: CNZ adr
 	-- Missing 0xc5: PUSH B
 	[0xc6] = function(s, b) s.A = flaghandle(s, s.A + b) end, -- ADI D8
 	-- Missing 0xc7: RST 0
 	-- Missing 0xc8: RZ
 	-- Missing 0xc9: RET
-	[0xca] = function(sb2, b3) local addr = pair(B2, B3) if s.z == true then s.PC = addr - 3 end end, -- JZ adr
-	[0xcb] = function(sb2, b3) local addr = pair(B2, B3) s.PC = addr - 3 end, -- JMP adr
+	[0xca] = function(s, b2, b3) local addr = pair(b2, b3) if s.z == true then s.PC = addr - 3 end end, -- JZ adr
+	[0xcb] = function(s, b2, b3) local addr = pair(b2, b3) s.PC = addr - 3 end, -- JMP adr
 	-- Missing 0xcc: CZ adr
 	-- Missing 0xcd: CALL adr
 	-- Missing 0xce: ACI D8
 	-- Missing 0xcf: RST 1
 	-- Missing 0xd0: RNC
 	-- Missing 0xd1: POP D
-	[0xd2] = function(sb2, b3) local addr = pair(B2, B3) if s.cy == false then s.PC = addr - 3 end end, -- JNC adr
+	[0xd2] = function(s, b2, b3) local addr = pair(b2, b3) if s.cy == false then s.PC = addr - 3 end end, -- JNC adr
 	-- Missing 0xd3: OUT D8
 	-- Missing 0xd4: CNC adr
 	-- Missing 0xd5: PUSH D
@@ -271,7 +271,7 @@ local ops = {
 	-- Missing 0xd7: RST 2
 	-- Missing 0xd8: RC
 	-- Missing 0xd9: RET
-	[0xda] = function(sb2, b3) local addr = pair(B2, B3) if s.cy == true then s.PC = addr - 3 end end, -- JC adr
+	[0xda] = function(s, b2, b3) local addr = pair(b2, b3) if s.cy == true then s.PC = addr - 3 end end, -- JC adr
 	-- Missing 0xdb: IN D8
 	-- Missing 0xdc: CC adr
 	-- Missing 0xdd: CALL adr
@@ -279,7 +279,7 @@ local ops = {
 	-- Missing 0xdf: RST 3
 	-- Missing 0xe0: RPO
 	-- Missing 0xe1: POP H
-	[0xe2] = function(sb2, b3) local addr = pair(B2, B3) if s.p == true then s.PC = addr - 3 end end, -- JPO adr
+	[0xe2] = function(s, b2, b3) local addr = pair(b2, b3) if s.p == true then s.PC = addr - 3 end end, -- JPO adr
 	-- Missing 0xe3: XTHL
 	-- Missing 0xe4: CPO adr
 	-- Missing 0xe5: PUSH H
@@ -287,7 +287,7 @@ local ops = {
 	-- Missing 0xe7: RST 4
 	-- Missing 0xe8: RPE
 	[0xe9] = function(s) s.PC = pair(s.H, s.L) - 1 end, -- PCHL
-	[0xea] = function(sb2, b3) local addr = pair(B2, B3) if s.p == false then s.PC = addr - 3 end end, -- JPE adr
+	[0xea] = function(s, b2, b3) local addr = pair(b2, b3) if s.p == false then s.PC = addr - 3 end end, -- JPE adr
 	-- Missing 0xeb: XCHG
 	-- Missing 0xec: CPE adr
 	-- Missing 0xed: CALL adr
@@ -295,7 +295,7 @@ local ops = {
 	-- Missing 0xef: RST 5
 	-- Missing 0xf0: RP
 	-- Missing 0xf1: POP PSW
-	[0xf2] = function(sb2, b3) local addr = pair(B2, B3) if s.s == true then s.PC = addr - 3 end end, -- JP adr
+	[0xf2] = function(s, b2, b3) local addr = pair(b2, b3) if s.s == true then s.PC = addr - 3 end end, -- JP adr
 	-- Missing 0xf3: DI
 	-- Missing 0xf4: CP adr
 	-- Missing 0xf5: PUSH PSW
@@ -303,7 +303,7 @@ local ops = {
 	-- Missing 0xf7: RST 6
 	-- Missing 0xf8: RM
 	-- Missing 0xf9: SPHL
-	[0xfa] = function(sb2, b3) local addr = pair(B2, B3) if s.s == false then s.PC = addr - 3 end end, -- JM adr
+	[0xfa] = function(s, b2, b3) local addr = pair(b2, b3) if s.s == false then s.PC = addr - 3 end end, -- JM adr
 	-- Missing 0xfb: EI
 	-- Missing 0xfc: CM adr
 	-- Missing 0xfd: CALL adr
