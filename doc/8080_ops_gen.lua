@@ -239,15 +239,15 @@ local optbl = {
 
 	-- Jumps
 	-- Probably something wrong here.
-	["JMP"] = "s.PC = addr - 3",
-	["JNZ"] = "if s.z == false then s.PC = addr - 3 end",
-	["JZ"] = "if s.z == true then s.PC = addr - 3 end",
-	["JNC"] = "if s.cy == false then s.PC = addr - 3 end",
-	["JC"] = "if s.cy == true then s.PC = addr - 3 end",	
-	["JPO"] = "if s.p == true then s.PC = addr - 3 end",	
-	["JPE"] = "if s.p == false then s.PC = addr - 3 end",	
-	["JP"] = "if s.s == true then s.PC = addr - 3 end",
-	["JM"] = "if s.s == false then s.PC = addr - 3 end",
+	["JMP X"] = "s.PC = addr - 3",
+	["JNZ X"] = "if s.z == false then s.PC = addr - 3 end",
+	["JZ X"] = "if s.z == true then s.PC = addr - 3 end",
+	["JNC X"] = "if s.cy == false then s.PC = addr - 3 end",
+	["JC X"] = "if s.cy == true then s.PC = addr - 3 end",	
+	["JPO X"] = "if s.p == true then s.PC = addr - 3 end",	
+	["JPE X"] = "if s.p == false then s.PC = addr - 3 end",	
+	["JP X"] = "if s.s == true then s.PC = addr - 3 end",
+	["JM X"] = "if s.s == false then s.PC = addr - 3 end",
 	["PCHL"] = "s.PC = pair(s.H, s.L) - 1",
 	
 	-- Memory stuff.
