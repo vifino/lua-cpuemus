@@ -107,7 +107,7 @@ local ops = {
 	[0x33] = function(s) local t = s.SP + 1 if a8(t) == 0 then SP = a8(SP + 1) end s.SP = t end, -- INX SP
 	[0x34] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandlency(s, s:getb(loc) + 1)) end, -- INR M
 	[0x35] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandlency(s, s:getb(loc) - 1)) end, -- DCR M
-	[0x36] = function(s) s:setb(pair(s.H, s.L), b) end, -- MVI M,D8
+	[0x36] = function(s, b) s:setb(pair(s.H, s.L), b) end, -- MVI M,D8
 	-- Missing 0x37: STC
 	[0x38] = function(s)  end, -- NOP
 	[0x39] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + s.SP) end, -- DAD SP
