@@ -17,7 +17,8 @@ _M.opnames = opnames
 
 -- Actual OP implementations, also in a table.
 local opslib = require("8080.ops")
-_M.ops = opslib.ops
+local ops = opslib.ops
+_M.ops = ops
 
 local function assert_bitfn(bit, name)
 	assert(bit[name], "8080: Did not find function "..name.." in bitlib. We need it.")
@@ -29,7 +30,7 @@ function _M.set_bit32(bitlib)
 	assert_bitfn(bitlib, "bxor") bxor = bitlib.bxor
 	assert_bitfn(bitlib, "lshift") lshift = bitlib.lshift
 	assert_bitfn(bitlib, "rshift") rshift = bitlib.rshift
-	opslib.inst_bitops(bit32)
+	opslib.inst_bitops(bitlib)
 	_M.bit32 = bitlib
 end
 
@@ -64,7 +65,7 @@ end
 local function callop(instance, op, pc)
 	local inst = instance
 	local getb = inst.getb
-	local op = getb(inst, pc)
+	local op = getb(inst, pc or 0)
 	local l = opbs[op]
 	local opfn = ops[op]
 	if opfn == nil then
@@ -73,7 +74,7 @@ local function callop(instance, op, pc)
 
 	-- We could do dynamic arg calling here, but overhead.
 	if l == 1 then
-		return opfn(inst
+		return opfn(inst)
 	elseif l == 2 then
 		return opfn(inst, getb(inst, pc+1))
 	else
@@ -83,14 +84,18 @@ end
 
 -- Run
 function _M.run(instance)
+	print("RUN")
 	local inst = instance
-	local getb = instance.getb
 
 	local pc = inst.PC
-	local op = getb(inst, pc)
+	local op = inst:getb(pc)
 	local opl = opbs[op]
+	if not opl then
+		error(fmt("l8080: Unknown OP 0x%02x", op))
+	end
 	callop(inst, op, PC)
 	inst.PC = pc + opl
+	return opnames[op]
 end
 
 -- Create a new 8080 instance
