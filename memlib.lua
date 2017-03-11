@@ -143,7 +143,7 @@ local function rostr_get(memory, i)
 	i = i + 1
 	if (i < memory.start_off) or (i > memory.end_pos) then return 0 end
 	i = i - memory.start_off
-	return strbyte(strsub(memory.str, i, i))
+	return strbyte(memory.str, i)
 end
 
 local function rostr_werr()
