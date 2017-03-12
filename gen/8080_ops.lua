@@ -3,24 +3,21 @@
 -- It gets generated into actual usable ops by the generator.
 -- Missing:
 -- (maybe out of date??)
---  RLC, RRC, RAL, RAR
---  SHLD adr, LHLD adr
---  STA adr, STC, LDA adr
---  CMC, HLT, CMP R
---  RNZ, POP B,
---  CNZ adr, PUSH R
---  RST 0, RZ, RET
---  CZ adr, CALL adr
---  RST 1, RNC, POP R
---  RST 2, RC, IN D8,
---  CC adr, RST 3, RPO
---  XTHL, CPO adr
---  RST 4, RPE, RCHL
---  XCHG, CPE adr, RST 5
---  RP, POP PSW, DI
---  CP adr, PUSH PSW, RST 6
---  RM, SPHL
---  EI, CM adr, CPI D8, RST 7
+-- RLC, RRC, RAL, RAR
+-- SHLD adr, LHLD adr
+-- STA adr, STC, LDA adr
+-- CMC, HLT, CMP <R/M>,
+-- RNZ, POP <R>, CNZ adr,
+-- PUSH <R>, RST <i>,
+-- RZ, RET, CZ adr, CALL adr,
+-- RNC, OUT <d8>, CNC adr,
+-- RC, IN <d8>, CC adr,
+-- RPO, XTHL, CPO adr,
+-- RPE, XCHG, CPE adr,
+-- RP, POP PSW, DI,
+-- CP adr, PUSH PSW,
+-- RM, SPHL, EI, CM adr,
+-- CPI <d8>.
 --
 -- Not a lot!
 return {
