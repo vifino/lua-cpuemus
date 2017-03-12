@@ -93,9 +93,11 @@ function _M.run(instance)
 	if not opl then
 		error(fmt("l8080: Unknown OP 0x%02x", op))
 	end
-	callop(inst, op, pc)
-	inst.PC = pc + opl
-	return opnames[op]
+	if not callop(inst, op, pc) then
+		inst.PC = pc + opl[1]
+		return opl[2]
+	end
+	return opl[3]
 end
 
 -- Create a new 8080 instance

@@ -6,7 +6,9 @@ The translations are as follows:
  D8         : B
  D16        : BB
  M          : M
- <otherwise>: R
+ <otherwise>: R (or alternatively the value directly.
+ Two translations are performed - one with unknowns set to R, one 
+ otherwise. The non-R form is preferred, as it's more specific.)
 
 Next, the resulting 'form' ("RB" in the example case) is looked up in the table opfnargs.
 This table describes what additional ('s' is always passed, and refers to the machine register state)
