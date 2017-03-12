@@ -8,7 +8,7 @@
 -- STA adr, STC, LDA adr
 -- CMC, HLT, CMP <R/M>,
 -- RNZ, POP <R>, CNZ adr,
--- PUSH <R>, RST <i>,
+-- PUSH <R>,
 -- RZ, RET, CZ adr, CALL adr,
 -- RNC, OUT <d8>, CNC adr,
 -- RC, IN <d8>, CC adr,
@@ -55,7 +55,7 @@ return {
 	-- Increment/decrement (all forms). These don't do anything with carry/aux.carry flags.
 	["INR R"] = "s.R = flaghandle(s, s.R + 1)",
 	["INR M"] = "local loc = RP s:setb(loc, flaghandle(s, s:getb(loc) + 1))",
-	["INX R"] = "local t = s.P + 1 if a8(t) == 0 then R = a8(R + 1) end s.P = t",
+	["INX R"] = "local t = a8(s.P + 1) if t == 0 then s.R = a8(s.R + 1) end s.P = t",
 
 	["DCR R"] = "s.R = flaghandle(s, s.R - 1)",
 	["DCR M"] = "local loc = RP s:setb(loc, flaghandle(s, s:getb(loc) - 1))",
@@ -97,11 +97,26 @@ return {
 	["ORI B"] = "s.A = flaghandle(s, bor(s.A, b)) s.cy = false",
 	["XRI B"] = "s.A = flaghandle(s, bxor(s.A, b)) s.cy = false",
 
-	-- Jumps
-	-- Probably something wrong here.
-	-- (No, it should be fine. Just remember to return true if
-	--  a call occurs in the conditional calls. -20kdc)
+	-- Jumps / Calls
+
+	["PCHL"] = "s.PC = pair(s.H, s.L) return true",
 	["JMP X"] = "s.PC = addr return true",
 	["JMP FX"] = "if F then s.PC = addr return true end",
-	["PCHL"] = "s.PC = pair(s.H, s.L) return true",
+
+	["CALL X"] = "s_call(s, addr, 3) return true",
+	["CALL FX"] = "if F then s_call(s, addr, 3) return true end",
+
+	["RET"] = "s.PC = s_pop(s) return true",
+	["RET F"] = "if F then s.PC = s_pop(s) return true end",
+
+	-- RSTs
+
+	["RST 0"] = "s_call(s, 0x00, 1) return true",
+	["RST 1"] = "s_call(s, 0x08, 1) return true",
+	["RST 2"] = "s_call(s, 0x10, 1) return true",
+	["RST 3"] = "s_call(s, 0x18, 1) return true",
+	["RST 4"] = "s_call(s, 0x20, 1) return true",
+	["RST 5"] = "s_call(s, 0x28, 1) return true",
+	["RST 6"] = "s_call(s, 0x30, 1) return true",
+	["RST 7"] = "s_call(s, 0x38, 1) return true",
 }

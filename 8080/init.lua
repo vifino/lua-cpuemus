@@ -92,7 +92,11 @@ function _M.run(instance)
 	if not opl then
 		error(fmt("l8080: Unknown OP 0x%02x", op))
 	end
-	if not callop(inst, op, pc) then
+	local ok, res = pcall(callop, inst, op, pc)
+	if not ok then
+		error(fmt("In OP 0x%02x (%s): %s", op, opnames[op], tostring(res)))
+	end
+	if not res then
 		inst.PC = pc + opl[1]
 		return opnames[op], opl[2]
 	end

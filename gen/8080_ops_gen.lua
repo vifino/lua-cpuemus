@@ -14,7 +14,7 @@ local band, bor, bxor, rshift, lshift
 
 -- Helpers
 local function a8(x)
-	return band(a, 0xFF)
+	return band(x, 0xFF)
 end
 
 local function pair(X, Y)
@@ -30,6 +30,7 @@ end
 -- Parity is counting the number of set bits.
 -- If the number of set bits is odd, it will return true.
 -- If the number bits is even, it will return false.
+-- Notably, size should be the amount of bits *minus 1*. So parity(res, 7) for the common 8-bit case.
 local function parity(x, size)
 	local p = 0
 	x = band(x, lshift(1, size) - 1)
@@ -46,7 +47,7 @@ local function flaghandle(inst, res)
 	res = band(res, 0xFF)
 	inst.z = (res == 0) -- is zero
 	inst.s = (band(res, 0x80) ~= 0) -- sign flag, if bit 7 set
-	inst.p = parity(res)
+	inst.p = parity(res, 7)
 	return res
 end
 
@@ -77,6 +78,27 @@ local function applyb(s, r, a, c)
 	s.ac = a
 	s.cy = c
 	return r
+end
+
+local function s_push(s, res)
+	local high, low = rshift(band(res, 0xFF00), 8), band(res, 0xFF)
+	s.SP = band(s.SP - 1, 0xFFFF)
+	s:setb(s.SP, high)
+	s.SP = band(s.SP - 1, 0xFFFF)
+	s:setb(s.SP, low)
+end
+
+local function s_pop(s)
+	local low = s:getb(s.SP)
+	s.SP = band(s.SP + 1, 0xFFFF)
+	local high = s:getb(s.SP)
+	s.SP = band(s.SP + 1, 0xFFFF)
+	return pair(high, low)
+end
+
+local function s_call(s, t, l)
+	s_push(s, band(s.PC + l, 0xFFFF))
+	s.PC = t
 end
 
 -- OPS

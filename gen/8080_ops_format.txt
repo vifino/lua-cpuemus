@@ -93,7 +93,19 @@ addcdb(a, b, cf) / subcdb(a, b, cf):
 applyb(s, r, ac, cy)
  Used with addcdb/subcdb to store ac/cy
 
-spair(s, <regname1>, <regname2>, v)
+pair(high, low)
+ ((high << 8) | low)
+
+spair(s, "regname1", "regname2", v)
  Writes to pair, and sets Carry accordingly.
  (example: spair(s, "B", "C", 0x1234) sets B to 0x12 and C to 0x34,
    turning off CY.)
+
+s_push(s)
+ Pushes a value onto stack.
+
+s_pop(s)
+ Pops and returns a value from stack.
+
+s_call(s, a, l)
+ Pushes s.PC + l to stack, then sets s.PC to a.
