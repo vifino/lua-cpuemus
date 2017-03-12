@@ -5,19 +5,14 @@
 -- (maybe out of date??)
 -- RLC, RRC, RAL, RAR
 -- SHLD adr, LHLD adr
--- STA adr, STC, LDA adr
--- CMC, HLT, CMP <R/M>,
--- RNZ, POP <R>, CNZ adr,
--- PUSH <R>,
--- RZ, RET, CZ adr, CALL adr,
--- RNC, OUT <d8>, CNC adr,
--- RC, IN <d8>, CC adr,
--- RPO, XTHL, CPO adr,
--- RPE, XCHG, CPE adr,
--- RP, POP PSW, DI,
--- CP adr, PUSH PSW,
--- RM, SPHL, EI, CM adr,
--- CPI <d8>.
+-- STA adr, LDA adr
+-- HLT,
+-- CMP <R/M>, CPI <d8>,
+-- POP <R>, PUSH <R>,
+-- OUT <d8>, IN <d8>,
+-- XTHL, XCHG,
+-- POP PSW, PUSH PSW,
+-- SPHL, EI, DI.
 --
 -- Not a lot!
 return {
@@ -38,6 +33,9 @@ return {
 	-- "MOV MM" is HLT
 
 	["CMA"] = "s.A = bxor(s.A, 0xFF)",
+
+	["STC"] = "s.cy = true",
+	["CMC"] = "s.cy = not s.cy",
 
 	["STAX R"] = "s:setb(RP, s.A)",
 	["LDAX R"] = "s.A = s:getb(RP)",
