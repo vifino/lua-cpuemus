@@ -124,8 +124,8 @@ return {
 
 	-- PUSH/POP
 
-	["PUSH R"] = "s_push8(s, s.R)",
-	["POP R"] = "s.R = s_pop8(s)",
+	["PUSH R"] = "s_push8(s, s.R) s_push8(s, s.P)",
+	["POP R"] = "s.P = s_pop8(s) s.R = s_pop8(s)",
 
 	["PUSH PSW"] = "s_push8(s, encode_psw(s)) s_push8(s, s.A)",
 	["POP PSW"] = "s.A = s_pop8(s) decode_psw(s, s_pop8(s))",
