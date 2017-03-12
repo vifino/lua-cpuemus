@@ -80,7 +80,7 @@ local ops = {
 	[0x04] = function(s) s.B = flaghandle(s, s.B + 1) end, -- INR B
 	[0x05] = function(s) s.B = flaghandle(s, s.B - 1) end, -- DCR B
 	[0x06] = function(s, b) s.B = b end, -- MVI B, D8
-	-- Missing 0x07: RLC
+	-- Missing 0x07: RLC (nil)
 	[0x08] = function(s)  end, -- NOP
 	[0x09] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.B, s.C)) end, -- DAD B
 	[0x0a] = function(s) s.A = s:getb(pair(s.B, s.C)) end, -- LDAX B
@@ -88,7 +88,7 @@ local ops = {
 	[0x0c] = function(s) s.C = flaghandle(s, s.C + 1) end, -- INR C
 	[0x0d] = function(s) s.C = flaghandle(s, s.C - 1) end, -- DCR C
 	[0x0e] = function(s, b) s.C = b end, -- MVI C,D8
-	-- Missing 0x0f: RRC
+	-- Missing 0x0f: RRC (nil)
 	[0x10] = function(s)  end, -- NOP
 	[0x11] = function(s, b2, b3) s.D = b3 s.E = b2 end, -- LXI D,D16
 	[0x12] = function(s) s:setb(pair(s.D, s.E), s.A) end, -- STAX D
@@ -96,7 +96,7 @@ local ops = {
 	[0x14] = function(s) s.D = flaghandle(s, s.D + 1) end, -- INR D
 	[0x15] = function(s) s.D = flaghandle(s, s.D - 1) end, -- DCR D
 	[0x16] = function(s, b) s.D = b end, -- MVI D, D8
-	-- Missing 0x17: RAL
+	-- Missing 0x17: RAL (nil)
 	[0x18] = function(s)  end, -- NOP
 	[0x19] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.D, s.E)) end, -- DAD D
 	[0x1a] = function(s) s.A = s:getb(pair(s.D, s.E)) end, -- LDAX D
@@ -104,10 +104,10 @@ local ops = {
 	[0x1c] = function(s) s.E = flaghandle(s, s.E + 1) end, -- INR E
 	[0x1d] = function(s) s.E = flaghandle(s, s.E - 1) end, -- DCR E
 	[0x1e] = function(s, b) s.E = b end, -- MVI E,D8
-	-- Missing 0x1f: RAR
+	-- Missing 0x1f: RAR (nil)
 	[0x20] = function(s)  end, -- NOP
 	[0x21] = function(s, b2, b3) s.H = b3 s.L = b2 end, -- LXI H,D16
-	-- Missing 0x22: SHLD adr
+	-- Missing 0x22: SHLD adr (X)
 	[0x23] = function(s) local t = s.L + 1 if a8(t) == 0 then H = a8(H + 1) end s.L = t end, -- INX H
 	[0x24] = function(s) s.H = flaghandle(s, s.H + 1) end, -- INR H
 	[0x25] = function(s) s.H = flaghandle(s, s.H - 1) end, -- DCR H
@@ -115,7 +115,7 @@ local ops = {
 	[0x27] = function(s) if band(s.A, 0x0F) > 9 or s.ac then  s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then  local na, ncy = addcdn(s.A, 0x60)  s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
 	[0x28] = function(s)  end, -- NOP
 	[0x29] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.H, s.L)) end, -- DAD H
-	-- Missing 0x2a: LHLD adr
+	-- Missing 0x2a: LHLD adr (X)
 	[0x2b] = function(s) local t = a8(s.L - 1) if t == 0xFF then s.H = a8(s.H - 1) end s.L = t end, -- DCX H
 	[0x2c] = function(s) s.L = flaghandle(s, s.L + 1) end, -- INR L
 	[0x2d] = function(s) s.L = flaghandle(s, s.L - 1) end, -- DCR L
@@ -123,20 +123,20 @@ local ops = {
 	[0x2f] = function(s) s.A = bxor(s.A, 0xFF) end, -- CMA
 	[0x30] = function(s)  end, -- NOP
 	[0x31] = function(s, b2, b3) s.SP = pair(b3, b2) end, -- LXI SP, D16
-	-- Missing 0x32: STA adr
+	-- Missing 0x32: STA adr (X)
 	[0x33] = function(s) local t = s.SP + 1 if a8(t) == 0 then SP = a8(SP + 1) end s.SP = t end, -- INX SP
 	[0x34] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandle(s, s:getb(loc) + 1)) end, -- INR M
 	[0x35] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandle(s, s:getb(loc) - 1)) end, -- DCR M
 	[0x36] = function(s, b) s:setb(pair(s.H, s.L), b) end, -- MVI M,D8
-	-- Missing 0x37: STC
+	-- Missing 0x37: STC (nil)
 	[0x38] = function(s)  end, -- NOP
 	[0x39] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + s.SP) end, -- DAD SP
-	-- Missing 0x3a: LDA adr
+	-- Missing 0x3a: LDA adr (X)
 	[0x3b] = function(s) local t = a8(s.SP - 1) if t == 0xFF then s.SP = a8(s.SP - 1) end s.SP = t end, -- DCX SP
 	[0x3c] = function(s) s.A = flaghandle(s, s.A + 1) end, -- INR A
 	[0x3d] = function(s) s.A = flaghandle(s, s.A - 1) end, -- DCR A
 	[0x3e] = function(s, b) s.A = b end, -- MVI A,D8
-	-- Missing 0x3f: CMC
+	-- Missing 0x3f: CMC (nil)
 	[0x40] = function(s) s.B = s.B end, -- MOV B,B
 	[0x41] = function(s) s.B = s.C end, -- MOV B,C
 	[0x42] = function(s) s.B = s.D end, -- MOV B,D
@@ -191,7 +191,7 @@ local ops = {
 	[0x73] = function(s) s:setb(pair(s.H, s.L), s.E) end, -- MOV M,E
 	[0x74] = function(s) s:setb(pair(s.H, s.L), s.H) end, -- MOV M,H
 	[0x75] = function(s) s:setb(pair(s.H, s.L), s.L) end, -- MOV M,L
-	-- Missing 0x76: HLT
+	-- Missing 0x76: HLT (nil)
 	[0x77] = function(s) s:setb(pair(s.H, s.L), s.A) end, -- MOV M,A
 	[0x78] = function(s) s.A = s.B end, -- MOV A,B
 	[0x79] = function(s) s.A = s.C end, -- MOV A,C
@@ -257,78 +257,78 @@ local ops = {
 	[0xb5] = function(s) s.A = flaghandle(s, bor(s.A, s.L)) s.cy = false end, -- ORA L
 	[0xb6] = function(s) s.A = flaghandle(s, bor(s.A, s:getb(pair(s.H, s.L)))) s.cy = false end, -- ORA M
 	[0xb7] = function(s) s.A = flaghandle(s, bor(s.A, s.A)) s.cy = false end, -- ORA A
-	-- Missing 0xb8: CMP B
-	-- Missing 0xb9: CMP C
-	-- Missing 0xba: CMP D
-	-- Missing 0xbb: CMP E
-	-- Missing 0xbc: CMP H
-	-- Missing 0xbd: CMP L
-	-- Missing 0xbe: CMP M
-	-- Missing 0xbf: CMP A
-	-- Missing 0xc0: RNZ
-	-- Missing 0xc1: POP B
-	[0xc2] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == false then s.PC = addr return true end end, -- JNZ adr
+	-- Missing 0xb8: CMP B (R)
+	-- Missing 0xb9: CMP C (R)
+	-- Missing 0xba: CMP D (R)
+	-- Missing 0xbb: CMP E (R)
+	-- Missing 0xbc: CMP H (R)
+	-- Missing 0xbd: CMP L (R)
+	-- Missing 0xbe: CMP M (M)
+	-- Missing 0xbf: CMP A (R)
+	-- Missing 0xc0: RET !FZ (F)
+	-- Missing 0xc1: POP B (R)
+	[0xc2] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == false then s.PC = addr return true end end, -- JMP !FZ adr
 	[0xc3] = function(s, b2, b3) local addr = pair(b3, b2) s.PC = addr return true end, -- JMP adr
-	-- Missing 0xc4: CNZ adr
-	-- Missing 0xc5: PUSH B
+	-- Missing 0xc4: CALL !FZ adr (FX)
+	-- Missing 0xc5: PUSH B (R)
 	[0xc6] = function(s, b) s.A = flaghandle(s, applyb(s, addcdb(s.A, b))) end, -- ADI D8
-	-- Missing 0xc7: RST 0
-	-- Missing 0xc8: RZ
-	-- Missing 0xc9: RET
-	[0xca] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == true then s.PC = addr return true end end, -- JZ adr
+	-- Missing 0xc7: RST 0 (R)
+	-- Missing 0xc8: RET FZ (F)
+	-- Missing 0xc9: RET (nil)
+	[0xca] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == true then s.PC = addr return true end end, -- JMP FZ adr
 	[0xcb] = function(s, b2, b3) local addr = pair(b3, b2) s.PC = addr return true end, -- JMP adr
-	-- Missing 0xcc: CZ adr
-	-- Missing 0xcd: CALL adr
+	-- Missing 0xcc: CALL FZ adr (FX)
+	-- Missing 0xcd: CALL adr (X)
 	[0xce] = function(s, b) s.A = flaghandle(s, applyb(s, addcdb(s.A, b, s.cy))) end, -- ACI D8
-	-- Missing 0xcf: RST 1
-	-- Missing 0xd0: RNC
-	-- Missing 0xd1: POP D
-	[0xd2] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == false then s.PC = addr return true end end, -- JNC adr
-	-- Missing 0xd3: OUT D8
-	-- Missing 0xd4: CNC adr
-	-- Missing 0xd5: PUSH D
+	-- Missing 0xcf: RST 1 (R)
+	-- Missing 0xd0: RET !FC (F)
+	-- Missing 0xd1: POP D (R)
+	[0xd2] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == false then s.PC = addr return true end end, -- JMP !FC adr
+	-- Missing 0xd3: OUT D8 (B)
+	-- Missing 0xd4: CALL !FC adr (FX)
+	-- Missing 0xd5: PUSH D (R)
 	[0xd6] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b))) end, -- SUI D8
-	-- Missing 0xd7: RST 2
-	-- Missing 0xd8: RC
-	-- Missing 0xd9: RET
-	[0xda] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == true then s.PC = addr return true end end, -- JC adr
-	-- Missing 0xdb: IN D8
-	-- Missing 0xdc: CC adr
-	-- Missing 0xdd: CALL adr
+	-- Missing 0xd7: RST 2 (R)
+	-- Missing 0xd8: RET FC (F)
+	-- Missing 0xd9: RET (nil)
+	[0xda] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == true then s.PC = addr return true end end, -- JMP FC adr
+	-- Missing 0xdb: IN D8 (B)
+	-- Missing 0xdc: CALL FC adr (FX)
+	-- Missing 0xdd: CALL adr (X)
 	[0xde] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b, s.cy))) end, -- SBI D8
-	-- Missing 0xdf: RST 3
-	-- Missing 0xe0: RPO
-	-- Missing 0xe1: POP H
-	[0xe2] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == true then s.PC = addr return true end end, -- JPO adr
-	-- Missing 0xe3: XTHL
-	-- Missing 0xe4: CPO adr
-	-- Missing 0xe5: PUSH H
+	-- Missing 0xdf: RST 3 (R)
+	-- Missing 0xe0: RET !FPE (F)
+	-- Missing 0xe1: POP H (R)
+	[0xe2] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == false then s.PC = addr return true end end, -- JMP !FPE adr
+	-- Missing 0xe3: XTHL (nil)
+	-- Missing 0xe4: CALL !FPE adr (FX)
+	-- Missing 0xe5: PUSH H (R)
 	[0xe6] = function(s, b) s.A = flaghandle(s, band(s.A, b)) s.cy = false end, -- ANI D8
-	-- Missing 0xe7: RST 4
-	-- Missing 0xe8: RPE
+	-- Missing 0xe7: RST 4 (R)
+	-- Missing 0xe8: RET FPE (F)
 	[0xe9] = function(s) s.PC = pair(s.H, s.L) return true end, -- PCHL
-	[0xea] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == false then s.PC = addr return true end end, -- JPE adr
-	-- Missing 0xeb: XCHG
-	-- Missing 0xec: CPE adr
-	-- Missing 0xed: CALL adr
+	[0xea] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == true then s.PC = addr return true end end, -- JMP FPE adr
+	-- Missing 0xeb: XCHG (nil)
+	-- Missing 0xec: CALL FPE adr (FX)
+	-- Missing 0xed: CALL adr (X)
 	[0xee] = function(s, b) s.A = flaghandle(s, bxor(s.A, b)) s.cy = false end, -- XRI D8
-	-- Missing 0xef: RST 5
-	-- Missing 0xf0: RP
-	-- Missing 0xf1: POP PSW
-	[0xf2] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == true then s.PC = addr return true end end, -- JP adr
-	-- Missing 0xf3: DI
-	-- Missing 0xf4: CP adr
-	-- Missing 0xf5: PUSH PSW
+	-- Missing 0xef: RST 5 (R)
+	-- Missing 0xf0: RET !FS (F)
+	-- Missing 0xf1: POP PSW (R)
+	[0xf2] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == false then s.PC = addr return true end end, -- JMP !FS adr
+	-- Missing 0xf3: DI (nil)
+	-- Missing 0xf4: CALL !FS adr (FX)
+	-- Missing 0xf5: PUSH PSW (R)
 	[0xf6] = function(s, b) s.A = flaghandle(s, bor(s.A, b)) s.cy = false end, -- ORI D8
-	-- Missing 0xf7: RST 6
-	-- Missing 0xf8: RM
-	-- Missing 0xf9: SPHL
-	[0xfa] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == false then s.PC = addr return true end end, -- JM adr
-	-- Missing 0xfb: EI
-	-- Missing 0xfc: CM adr
-	-- Missing 0xfd: CALL adr
-	-- Missing 0xfe: CPI D8
-	-- Missing 0xff: RST 7
+	-- Missing 0xf7: RST 6 (R)
+	-- Missing 0xf8: RET FS (F)
+	-- Missing 0xf9: SPHL (nil)
+	[0xfa] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == true then s.PC = addr return true end end, -- JMP FS adr
+	-- Missing 0xfb: EI (nil)
+	-- Missing 0xfc: CALL FS adr (FX)
+	-- Missing 0xfd: CALL adr (X)
+	-- Missing 0xfe: CPI D8 (B)
+	-- Missing 0xff: RST 7 (R)
 }
 	
 return {

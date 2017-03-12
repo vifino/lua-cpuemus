@@ -6,6 +6,7 @@ The translations are as follows:
  D8         : B
  D16        : BB
  M          : M
+ !FZ, FZ, !FC, FC, !FPE, FPE, !FS, FS : F
  <otherwise>: R (or alternatively the value directly.
  Two translations are performed - one with unknowns set to R, one 
  otherwise. The non-R form is preferred, as it's more specific.)
@@ -35,6 +36,8 @@ nil: Nothing happens. This is the case for unknown forms, assuming opfnargs does
    and finally "R2" is replaced with the second register name.
 
 Note that the replacement rules occur in the order specified.
+Finally, if the first parameter is a valid flag, then a replacement 
+ of "F" with "s.<flag> == <value>" occurs.
 
 The tables "regpair" and "regpartner" are provided here in a table form
  (idealized - "B,C" -> "pair(s.B, s.C)", and thus cannot be written to)

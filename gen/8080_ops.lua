@@ -102,13 +102,6 @@ return {
 	-- (No, it should be fine. Just remember to return true if
 	--  a call occurs in the conditional calls. -20kdc)
 	["JMP X"] = "s.PC = addr return true",
-	["JNZ X"] = "if s.z == false then s.PC = addr return true end",
-	["JZ X"] = "if s.z == true then s.PC = addr return true end",
-	["JNC X"] = "if s.cy == false then s.PC = addr return true end",
-	["JC X"] = "if s.cy == true then s.PC = addr return true end",
-	["JPO X"] = "if s.p == true then s.PC = addr return true end",
-	["JPE X"] = "if s.p == false then s.PC = addr return true end",
-	["JP X"] = "if s.s == true then s.PC = addr return true end",
-	["JM X"] = "if s.s == false then s.PC = addr return true end",
+	["JMP FX"] = "if F then s.PC = addr return true end",
 	["PCHL"] = "s.PC = pair(s.H, s.L) return true",
 }

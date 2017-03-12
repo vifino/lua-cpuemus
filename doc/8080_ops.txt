@@ -190,67 +190,67 @@
 0xbd	CMP L	1	4	4	Z, S, P, CY, AC	A - L
 0xbe	CMP M	1	7	7	Z, S, P, CY, AC	A - (HL)
 0xbf	CMP A	1	4	4	Z, S, P, CY, AC	A - A
-0xc0	RNZ	1	5	11		if NZ, RET
+0xc0	RET !FZ	1	5	11		if NZ, RET
 0xc1	POP B	1	10	10		C <- (sp); B <- (sp+1); sp <- sp+2
-0xc2	JNZ adr	3	10	10		if NZ, PC <- adr
+0xc2	JMP !FZ adr	3	10	10		if NZ, PC <- adr
 0xc3	JMP adr	3	10	10		PC <= adr
-0xc4	CNZ adr	3	11	17		if NZ, CALL adr
+0xc4	CALL !FZ adr	3	11	17		if NZ, CALL adr
 0xc5	PUSH B	1	11	11		(sp-2)<-C; (sp-1)<-B; sp <- sp - 2
 0xc6	ADI D8	2	7	7	Z, S, P, CY, AC	A <- A + byte
 0xc7	RST 0	1	11	11		CALL $0
-0xc8	RZ	1	5	11		if Z, RET
+0xc8	RET FZ	1	5	11		if Z, RET
 0xc9	RET	1	10	10		PC.lo <- (sp); PC.hi<-(sp+1); SP <- SP+2
-0xca	JZ adr	3	3	3		if Z, PC <- adr
+0xca	JMP FZ adr	3	3	3		if Z, PC <- adr
 0xcb	JMP adr	3	3	3		<This is the BITS group prefix on Z80.>
-0xcc	CZ adr	3	11	17		if Z, CALL adr
+0xcc	CALL FZ adr	3	11	17		if Z, CALL adr
 0xcd	CALL adr	3	17	17		(SP-1)<-PC.hi;(SP-2)<-PC.lo;SP<-SP+2;PC=adr
 0xce	ACI D8	2	7	7	Z, S, P, CY, AC	A <- A + data + CY
 0xcf	RST 1	1	11	11		CALL $8
-0xd0	RNC	1	5	11		if NCY, RET
+0xd0	RET !FC	1	5	11		if NCY, RET
 0xd1	POP D	1	10	10		E <- (sp); D <- (sp+1); sp <- sp+2
-0xd2	JNC adr	3	10	10		if NCY, PC<-adr
+0xd2	JMP !FC adr	3	10	10		if NCY, PC<-adr
 0xd3	OUT D8	2	10	10		special
-0xd4	CNC adr	3	11	17		if NCY, CALL adr
+0xd4	CALL !FC adr	3	11	17		if NCY, CALL adr
 0xd5	PUSH D	1	11	11		(sp-2)<-E; (sp-1)<-D; sp <- sp - 2
 0xd6	SUI D8	2	7	7	Z, S, P, CY, AC	A <- A - data
 0xd7	RST 2	1	11	11		CALL $10
-0xd8	RC	1	5	11		if CY, RET
+0xd8	RET FC	1	5	11		if CY, RET
 0xd9	RET	1	10	10		<This is EXX on Z80.>
-0xda	JC adr	3	10	10		if CY, PC<-adr
+0xda	JMP FC adr	3	10	10		if CY, PC<-adr
 0xdb	IN D8	2	10	10		special
-0xdc	CC adr	3	11	17		if CY, CALL adr
+0xdc	CALL FC adr	3	11	17		if CY, CALL adr
 0xdd	CALL adr	3	17	17		<This is the IX prefix on Z80.>
 0xde	SBI D8	2	7	7	Z, S, P, CY, AC	A <- A - data - CY
 0xdf	RST 3	1	11	11		CALL $18
-0xe0	RPO	1	5	11		if PO, RET
+0xe0	RET !FPE	1	5	11		if PO, RET
 0xe1	POP H	1	10	10		L <- (sp); H <- (sp+1); sp <- sp+2
-0xe2	JPO adr	3	10	10		if PO, PC <- adr
+0xe2	JMP !FPE adr	3	10	10		if PO, PC <- adr
 0xe3	XTHL	1	18	18		L <-> (SP); H <-> (SP+1)
-0xe4	CPO adr	3	11	17		if PO, CALL adr
+0xe4	CALL !FPE adr	3	11	17		if PO, CALL adr
 0xe5	PUSH H	1	11	11		(sp-2)<-L; (sp-1)<-H; sp <- sp - 2
 0xe6	ANI D8	2	7	7	Z, S, P, CY, AC	A <- A & data
 0xe7	RST 4	1	11	11		CALL $20
-0xe8	RPE	1	5	11		if PE, RET
+0xe8	RET FPE	1	5	11		if PE, RET
 0xe9	PCHL	1	5	5		PC.hi <- H; PC.lo <- L
-0xea	JPE adr	3	10	10		if PE, PC <- adr
+0xea	JMP FPE adr	3	10	10		if PE, PC <- adr
 0xeb	XCHG	1	5	5		H <-> D; L <-> E
-0xec	CPE adr	3	11	17		if PE, CALL adr
+0xec	CALL FPE adr	3	11	17		if PE, CALL adr
 0xed	CALL adr	3	17	17		<This is the EXTD prefix on Z80.>
 0xee	XRI D8	2	7	7	Z, S, P, CY, AC	A <- A ^ data
 0xef	RST 5	1	11	11		CALL $28
-0xf0	RP	1	5	11		if P, RET
+0xf0	RET !FS	1	5	11		if S=0, RET
 0xf1	POP PSW	1	10	10		flags <- (sp); A <- (sp+1); sp <- sp+2
-0xf2	JP adr	3	10	10		if S=0, PC <- adr
+0xf2	JMP !FS adr	3	10	10		if S=0, PC <- adr
 0xf3	DI	1	4	4		special
-0xf4	CP adr	3	11	17		if S=0, CALL adr
+0xf4	CALL !FS adr	3	11	17		if S=0, CALL adr
 0xf5	PUSH PSW	1	11	11		(sp-2)<-flags; (sp-1)<-A; sp <- sp - 2
 0xf6	ORI D8	2	7	7	Z, S, P, CY, AC	A <- A | data
 0xf7	RST 6	1	11	11		CALL $30
-0xf8	RM	1	5	11		if M, RET
+0xf8	RET FS	1	5	11		if S=1, RET
 0xf9	SPHL	1	5	5		SP=HL
-0xfa	JM adr	3	10	10		if M, PC <- adr
+0xfa	JMP FS adr	3	10	10		if S=1, PC <- adr
 0xfb	EI	1	4	4		special
-0xfc	CM adr	3	11	17		if M, CALL adr
+0xfc	CALL FS adr	3	11	17		if S=1, CALL adr
 0xfd	CALL adr	3	17	17		<This is the IY prefix on Z80.>
 0xfe	CPI D8	2	7	7	Z, S, P, CY, AC	A - data
 0xff	RST 7	1	11	11		CALL $38

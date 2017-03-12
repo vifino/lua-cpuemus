@@ -86,31 +86,49 @@ local ops = {
 -- Helpers
 local T_ADDR = 1
 local T_BYTE = 2
+
+-- Used to identify and translate flags
+local flags = {
+	["!FZ"] = "s.z == false",
+	["FZ"] = "s.z == true",
+	["!FC"] = "s.cy == false",
+	["FC"] = "s.cy == true",
+	["!FPE"] = "s.p == false",
+	["FPE"] = "s.p == true",
+	["!FS"] = "s.s == false",
+	["FS"] = "s.s == true"
+	-- The "aux. carry" flag is unreadable directly.
+}
+
 local function arg_types(argstr)
 	local tstr, rstr = "", ""
 	local real = {}
 	for T in string.gmatch(argstr, '([^, ]+)') do
-			if T == "adr" then
-				tstr = tstr .. "X"
-				rstr = rstr .. "x"
-				tinsert(real, X)
-			elseif T == "D8" then
-	    	tstr = tstr .. "B"
-	    	rstr = rstr .. "b"
-	    	tinsert(real, "B")
-	    elseif T == "D16" then
-	    	tstr = tstr .. "BB"
-	    	rstr = rstr .. "bb"
-	    	tinsert(real, "BB")
-			elseif T == "M" then
-				tstr = tstr .. T
-				rstr = rstr .. T
-				tinsert(real, T)
-			else
-				tstr = tstr .. "R"
-				rstr = rstr .. T
-				tinsert(real, T)
-			end
+		if T == "adr" then
+			tstr = tstr .. "X"
+			rstr = rstr .. "x"
+			tinsert(real, "X")
+		elseif T == "D8" then
+	    		tstr = tstr .. "B"
+		    	rstr = rstr .. "b"
+		    	tinsert(real, "B")
+		elseif T == "D16" then
+		    	tstr = tstr .. "BB"
+	    		rstr = rstr .. "bb"
+		    	tinsert(real, "BB")
+		elseif T == "M" then
+			tstr = tstr .. T
+			rstr = rstr .. T
+			tinsert(real, T)
+		elseif flags[T] then
+			tstr = tstr .. "F"
+			rstr = rstr .. "f"
+			tinsert(real, T)
+		else
+			tstr = tstr .. "R"
+			rstr = rstr .. T
+			tinsert(real, T)
+		end
 	end
 	return tstr, rstr, real
 end
@@ -135,7 +153,9 @@ local opfnargs = {
 	MR = ")",
 	MB = ", b)",
 	B = ", b)",
-	X = ", b2, b3) local addr = pair(b3, b2)"
+	X = ", b2, b3) local addr = pair(b3, b2)",
+	F = ")",
+	FX = ", b2, b3) local addr = pair(b3, b2)"
 }
 
 local opfnregs = {
@@ -199,6 +219,9 @@ local function genop(list, op, args, rargs, real)
 	else
 		str = str .. opf
 	end
+	if real[1] and flags[real[1]] then
+		str = str:gsub("F", flags[real[1]])
+	end
 	return str .. " end"
 end
 
@@ -209,11 +232,12 @@ local optbl = dofile("gen/8080_ops.lua") -- file location is... questionable at 
 for opb=0x00, 0xFF do
 	local opn = opnames[opb]
 	if opn then
-		local gen = genop(optbl, splitop(opn))
+		local n, args, rargs, real = splitop(opn)
+		local gen = genop(optbl, n, args, rargs, real)
 		if gen then
 			print(fmt("\t[0x%02x] = %s, -- %s", opb, gen, opn))
 		else
-			print(fmt("\t-- Missing 0x%02x: %s", opb, opn))
+			print(fmt("\t-- Missing 0x%02x: %s (%s)", opb, opn, args))
 		end
 	else
 		--print(fmt("\t-- Missing 0x%02x", opb))
