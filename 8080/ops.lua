@@ -175,7 +175,7 @@ local ops = {
 	[0x2f] = function(s) s.A = bxor(s.A, 0xFF) end, -- CMA
 	[0x30] = function(s)  end, -- NOP
 	[0x31] = function(s, b2, b3) s.SP = pair(b3, b2) end, -- LXI SP, D16
-	-- Missing 0x32: STA adr (X)
+	[0x32] = function(s, b2, b3) local addr = pair(b3, b2) s:setb(addr, s.A) end, -- STA adr
 	[0x33] = function(s) local t = a8(s.SP + 1) if t == 0 then s.SP = a8(s.SP + 1) end s.SP = t end, -- INX SP
 	[0x34] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandle(s, s:getb(loc) + 1)) end, -- INR M
 	[0x35] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandle(s, s:getb(loc) - 1)) end, -- DCR M
@@ -183,7 +183,7 @@ local ops = {
 	[0x37] = function(s) s.cy = true end, -- STC
 	[0x38] = function(s)  end, -- NOP
 	[0x39] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + s.SP) end, -- DAD SP
-	-- Missing 0x3a: LDA adr (X)
+	[0x3a] = function(s, b2, b3) local addr = pair(b3, b2) s.A = s:getb(addr) end, -- LDA adr
 	[0x3b] = function(s) local t = a8(s.SP - 1) if t == 0xFF then s.SP = a8(s.SP - 1) end s.SP = t end, -- DCX SP
 	[0x3c] = function(s) s.A = flaghandle(s, s.A + 1) end, -- INR A
 	[0x3d] = function(s) s.A = flaghandle(s, s.A - 1) end, -- DCR A
@@ -315,7 +315,7 @@ local ops = {
 	[0xbb] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.E))) end, -- CMP E
 	[0xbc] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.H))) end, -- CMP H
 	[0xbd] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.L))) end, -- CMP L
-	-- Missing 0xbe: CMP M (M)
+	[0xbe] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s:getb(pair(s.H, s.L))))) end, -- CMP M
 	[0xbf] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.A))) end, -- CMP A
 	[0xc0] = function(s) if s.z == false then s.PC = s_pop16(s) return true end end, -- RET !FZ
 	[0xc1] = function(s) s.C = s_pop8(s) s.B = s_pop8(s) end, -- POP B

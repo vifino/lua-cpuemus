@@ -32,6 +32,9 @@ return {
 	["STC"] = "s.cy = true",
 	["CMC"] = "s.cy = not s.cy",
 
+	["LDA X"] = "s.A = s:getb(addr)",
+	["STA X"] = "s:setb(addr, s.A)",
+
 	["STAX R"] = "s:setb(RP, s.A)",
 	["LDAX R"] = "s.A = s:getb(RP)",
 
@@ -78,6 +81,7 @@ return {
 	-- Comparisons
 	["CPI B"] = "flaghandle(s, applyb(s, subcdb(s.A, b)))",
 	["CMP R"] = "flaghandle(s, applyb(s, subcdb(s.A, s.R)))",
+	["CMP M"] = "flaghandle(s, applyb(s, subcdb(s.A, s:getb(RP))))",
 
 	-- Bitops
 
