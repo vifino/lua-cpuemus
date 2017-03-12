@@ -45,5 +45,5 @@ local inst = l8080.new(get, set)
 while true do
 	local pc = inst.PC
 	local n, c = inst:run()
-	print(string.format("%i cycles: 0x%04x: %s -> 0x%04x", c, pc, n, inst.PC))
+	print(string.format("0x%04x: %s -> 0x%04x (%i cycles)", pc, n, inst.PC, c))
 end
