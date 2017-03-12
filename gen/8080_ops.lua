@@ -80,6 +80,10 @@ return {
 	["SUI B"] = "s.A = flaghandle(s, applyb(s, subcdb(s.A, b)))",
 	["SBI B"] = "s.A = flaghandle(s, applyb(s, subcdb(s.A, b, s.cy)))",
 
+	-- Comparisons
+	["CPI B"] = "flaghandle(s, applyb(s, subcdb(s.A, b)))",
+	["CMP R"] = "flaghandle(s, applyb(s, subcdb(s.A, s.R)))",
+
 	-- Bitops
 
 	["ANA R"] = "s.A = flaghandle(s, band(s.A, s.R)) s.cy = false",

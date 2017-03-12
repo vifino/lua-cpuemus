@@ -150,7 +150,7 @@ local ops = {
 	[0x34] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandle(s, s:getb(loc) + 1)) end, -- INR M
 	[0x35] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandle(s, s:getb(loc) - 1)) end, -- DCR M
 	[0x36] = function(s, b) s:setb(pair(s.H, s.L), b) end, -- MVI M,D8
-	-- Missing 0x37: STC (nil)
+	[0x37] = function(s) s.cy = true end, -- STC
 	[0x38] = function(s)  end, -- NOP
 	[0x39] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + s.SP) end, -- DAD SP
 	-- Missing 0x3a: LDA adr (X)
@@ -158,7 +158,7 @@ local ops = {
 	[0x3c] = function(s) s.A = flaghandle(s, s.A + 1) end, -- INR A
 	[0x3d] = function(s) s.A = flaghandle(s, s.A - 1) end, -- DCR A
 	[0x3e] = function(s, b) s.A = b end, -- MVI A,D8
-	-- Missing 0x3f: CMC (nil)
+	[0x3f] = function(s) s.cy = not s.cy end, -- CMC
 	[0x40] = function(s) s.B = s.B end, -- MOV B,B
 	[0x41] = function(s) s.B = s.C end, -- MOV B,C
 	[0x42] = function(s) s.B = s.D end, -- MOV B,D
@@ -279,14 +279,14 @@ local ops = {
 	[0xb5] = function(s) s.A = flaghandle(s, bor(s.A, s.L)) s.cy = false end, -- ORA L
 	[0xb6] = function(s) s.A = flaghandle(s, bor(s.A, s:getb(pair(s.H, s.L)))) s.cy = false end, -- ORA M
 	[0xb7] = function(s) s.A = flaghandle(s, bor(s.A, s.A)) s.cy = false end, -- ORA A
-	-- Missing 0xb8: CMP B (R)
-	-- Missing 0xb9: CMP C (R)
-	-- Missing 0xba: CMP D (R)
-	-- Missing 0xbb: CMP E (R)
-	-- Missing 0xbc: CMP H (R)
-	-- Missing 0xbd: CMP L (R)
+	[0xb8] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.B))) end, -- CMP B
+	[0xb9] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.C))) end, -- CMP C
+	[0xba] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.D))) end, -- CMP D
+	[0xbb] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.E))) end, -- CMP E
+	[0xbc] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.H))) end, -- CMP H
+	[0xbd] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.L))) end, -- CMP L
 	-- Missing 0xbe: CMP M (M)
-	-- Missing 0xbf: CMP A (R)
+	[0xbf] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.A))) end, -- CMP A
 	[0xc0] = function(s) if s.z == false then s.PC = s_pop(s) return true end end, -- RET !FZ
 	-- Missing 0xc1: POP B (R)
 	[0xc2] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == false then s.PC = addr return true end end, -- JMP !FZ adr
@@ -349,7 +349,7 @@ local ops = {
 	-- Missing 0xfb: EI (nil)
 	[0xfc] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == true then s_call(s, addr, 3) return true end end, -- CALL FS adr
 	[0xfd] = function(s, b2, b3) local addr = pair(b3, b2) s_call(s, addr, 3) return true end, -- CALL adr
-	-- Missing 0xfe: CPI D8 (B)
+	[0xfe] = function(s, b) flaghandle(s, applyb(s, subcdb(s.A, b))) end, -- CPI D8
 	[0xff] = function(s) s_call(s, 0x38, 1) return true end, -- RST 7
 }
 	
