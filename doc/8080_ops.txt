@@ -37,7 +37,7 @@
 0x24	INR H	1	Z, S, P, AC	H <- H+1
 0x25	DCR H	1	Z, S, P, AC	H <- H-1
 0x26	MVI H,D8	2		H <- byte 2
-0x27	DAA	1		special <This does BCD adjustment, whatever that means>
+0x27	DAA	1	Z, S, P, CY, AC	If ((A >= 0x0A) || flag.AC) A += 6; flag.AC = carried outside of the lower 4 bits; if ((A >= 0xA0) || flag.CY) {A += 0x60; flag.CY = carry;}
 0x28	NOP	1		<This opcode is JR Z,* on Z80.>
 0x29	DAD H	1	CY	HL = HL + HI
 0x2a	LHLD adr	3		L <- (adr); H<-(adr+1)
@@ -46,7 +46,7 @@
 0x2d	DCR L	1	Z, S, P, AC	L <- L-1
 0x2e	MVI L, D8	2		L <- byte 2
 0x2f	CMA	1		A <- !A
-0x30	NOP	1		special <This is different on Z80 and the 8085.>
+0x30	NOP	1		<This is different on Z80 and the 8085.>
 0x31	LXI SP, D16	3		SP.hi <- byte 3, SP.lo <- byte 2
 0x32	STA adr	3		(adr) <- A
 0x33	INX SP	1		SP = SP + 1
@@ -116,7 +116,7 @@
 0x73	MOV M,E	1		(HL) <- E
 0x74	MOV M,H	1		(HL) <- H
 0x75	MOV M,L	1		(HL) <- L
-0x76	HLT	1		special
+0x76	HLT	1		<The PC is incremented, and then the CPU is stopped until the next interrupt.>
 0x77	MOV M,A	1		(HL) <- A
 0x78	MOV A,B	1		A <- B
 0x79	MOV A,C	1		A <- C
