@@ -32,15 +32,36 @@ local mem = memlib.backend.rwoverlay(rom, memsz)
 --local addr_handlers = {}
 --local comp = memlib.compose(mem, addr_handlers)
 
-local function get(zpu_inst, i, v)
+local function get(inst, i)
 	return mem:get(i)
 end
-local function set(zpu_inst, i, v)
+local function set(inst, i, v)
 	return mem:set(i, v)
+end
+-- Stubs for now - eeek.
+local shiftreg = 0
+local shiftregofs = 0
+local function iog(inst, i)
+	i = bitops.band(i, 255)
+	if i == 1 then return 1 end
+	if i == 3 then
+		return bitops.rshift(bitops.band(bitops.lshift(shiftreg, shiftregofs), 0xFF00), 8)
+	end
+	return 0
+end
+local function ios(inst, i, v)
+	i = bitops.band(i, 255)
+	if i == 4 then
+		shiftreg = math.floor(shiftreg / 256)
+		shiftreg = shiftreg + (v * 256)
+	end
+	if i == 2 then
+		shiftregofs = v % 8
+	end
 end
 
 -- Get ZPU instance and set up.
-local inst = l8080.new(get, set)
+local inst = l8080.new(get, set, iog, ios)
 
 while true do
 	local pc = inst.PC

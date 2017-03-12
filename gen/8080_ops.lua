@@ -7,7 +7,6 @@
 -- SHLD adr, LHLD adr
 -- STA adr, LDA adr
 -- HLT,
--- OUT <d8>, IN <d8>,
 -- SPHL, EI, DI.
 --
 -- Not a lot!
@@ -130,4 +129,9 @@ return {
 
 	["XCHG"] = "local oh, ol = s.H, s.L s.H = s.D s.D = oh s.L = s.E s.E = ol",
 	["XTHL"] = "local oh, ol, a2 = s.H, s.L, band(s.SP + 1, 0xFFFF) s.L = s:getb(s.SP) s:setb(s.SP, ol) s.H = s:getb(a2) s:setb(a2, oh)",
+
+	-- IO
+	
+	["IN B"] = "s.A = s:iogb(bor(s.B * 256, b))",
+	["OUT B"] = "s:iosb(bor(s.B * 256, b), s.A)",
 }

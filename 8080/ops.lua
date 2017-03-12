@@ -336,7 +336,7 @@ local ops = {
 	[0xd0] = function(s) if s.cy == false then s.PC = s_pop16(s) return true end end, -- RET !FC
 	[0xd1] = function(s) s.E = s_pop8(s) s.D = s_pop8(s) end, -- POP D
 	[0xd2] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == false then s.PC = addr return true end end, -- JMP !FC adr
-	-- Missing 0xd3: OUT D8 (B)
+	[0xd3] = function(s, b) s:iosb(bor(s.B * 256, b), s.A) end, -- OUT D8
 	[0xd4] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == false then s_call(s, addr, 3) return true end end, -- CALL !FC adr
 	[0xd5] = function(s) s_push8(s, s.D) s_push8(s, s.E) end, -- PUSH D
 	[0xd6] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b))) end, -- SUI D8
@@ -344,7 +344,7 @@ local ops = {
 	[0xd8] = function(s) if s.cy == true then s.PC = s_pop16(s) return true end end, -- RET FC
 	[0xd9] = function(s) s.PC = s_pop16(s) return true end, -- RET
 	[0xda] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == true then s.PC = addr return true end end, -- JMP FC adr
-	-- Missing 0xdb: IN D8 (B)
+	[0xdb] = function(s, b) s.A = s:iogb(bor(s.B * 256, b)) end, -- IN D8
 	[0xdc] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == true then s_call(s, addr, 3) return true end end, -- CALL FC adr
 	[0xdd] = function(s, b2, b3) local addr = pair(b3, b2) s_call(s, addr, 3) return true end, -- CALL adr
 	[0xde] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b, s.cy))) end, -- SBI D8
