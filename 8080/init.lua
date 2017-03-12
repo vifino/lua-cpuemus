@@ -104,7 +104,7 @@ function _M.run(instance)
 end
 
 -- Create a new 8080 instance
-function _M.new(getb, setb, iosb, iogb)
+function _M.new(getb, setb, iogb, iosb)
 	assert(_M.bit32, "8080: Did not set bit32 library. Bailing out.")
 
 	local l8080 = {}

@@ -50,6 +50,8 @@ local function iog(inst, i)
 	return 0
 end
 local function ios(inst, i, v)
+	print("HAVE AT YE")
+	print(i, v)
 	i = bitops.band(i, 255)
 	if i == 4 then
 		shiftreg = math.floor(shiftreg / 256)
@@ -57,6 +59,9 @@ local function ios(inst, i, v)
 	end
 	if i == 2 then
 		shiftregofs = v % 8
+	end
+	if i == 6 then
+		print(string.char(string.byte("A") + v))
 	end
 end
 
