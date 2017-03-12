@@ -1,0 +1,51 @@
+Firstly, everything starts with the names in 8080_ops.txt.
+These are translated from, for example, "MVI C, D8" to "MVI C D8", and then to "MVI RB".
+This translation is done by splitop and arg_types for the most part.
+The translations are as follows:
+ adr        : X
+ D8         : B
+ D16        : BB
+ M          : M
+ <otherwise>: R
+
+Next, the resulting 'form' ("RB" in the example case) is looked up in the table opfnargs.
+This table describes what additional ('s' is always passed, and refers to the machine register state)
+ arguments are passed to the function.
+For most cases, the answer is ")" - only the 's' argument is passed.
+
+However, in cases that contain B or X, either 'b' or 'b2'/'b3' arguments are passed.
+For RB and B, this is just b - for RBB and X, this is b2 and b3.
+In X's case, "local addr = pair(b2, b3)" is added before the function code.
+
+Next, a lookup of the table in 8080_ops.lua is performed with the mnemonic-form (ex. "MVI RB") name.
+There are three cases that can occur for how the code is translated, mapped via the table opfnregs:
+
+nil: Nothing happens. This is the case for unknown forms, assuming opfnargs doesn't cause issues.
+
+1: "RP" is replaced with the register pair R is part of (see table "regpair"),
+   "R" is replaced with the register name,
+   and anything remaining preceding a "P" that is NOT "S" is translated to the 'partner' register (see table "regpartner").
+
+2: "RP1" is replaced with the register pair the first register is part of (see table "regpair"),
+   "R1" is replaced with the first register name,
+   "RP2" is replaced with the register pair the second register is part of (again, see "regpair"),
+   and finally "R2" is replaced with the second register name.
+
+Note that the replacement rules occur in the order specified.
+
+The tables "regpair" and "regpartner" are provided here in a table form
+ (idealized - "B,C" -> "pair(s.B, s.C)", and thus cannot be written to)
+
+REG|PAIR|PARTNER|
+---|----|-------|
+B  |B,C |C      |
+C  |    |B      |
+---|----|-------|
+D  |D,E |E      |
+E  |    |D      |
+---|----|-------|
+H  |H,L |L      |
+L  |    |H      |
+---|----|-------|
+M  |H,L |H,L    | <Notably, this does NOT retrieve the value - it just gives the HL pair.>
+SP |SP  |SP     |
