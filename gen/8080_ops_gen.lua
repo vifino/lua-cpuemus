@@ -131,6 +131,16 @@ local function decode_psw(s)
 	s.s = band(s, 128) ~= 0
 end
 
+local function b_lsft(a)
+	local n = band(a * 2, 0xFF)
+	return n, band(a, 0x80)
+end
+
+local function b_rsft(a)
+	local n = band(math.floor(a / 2), 0x7F)
+	return n, band(a, 1)
+end
+
 -- OPS
 local ops = {
 ]])

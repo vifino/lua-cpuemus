@@ -123,6 +123,16 @@ local function decode_psw(s)
 	s.s = band(s, 128) ~= 0
 end
 
+local function b_lsft(a)
+	local n = band(a * 2, 0xFF)
+	return n, band(a, 0x80)
+end
+
+local function b_rsft(a)
+	local n = band(math.floor(a / 2), 0x7F)
+	return n, band(a, 1)
+end
+
 -- OPS
 local ops = {
 	[0x00] = function(s)  end, -- NOP
@@ -132,7 +142,7 @@ local ops = {
 	[0x04] = function(s) s.B = flaghandle(s, s.B + 1) end, -- INR B
 	[0x05] = function(s) s.B = flaghandle(s, s.B - 1) end, -- DCR B
 	[0x06] = function(s, b) s.B = b end, -- MVI B, D8
-	-- Missing 0x07: RLC (nil)
+	[0x07] = function(s) s.A, s.cy = b_lsft(s.A) if s.cy then s.A = bor(s.A, 1) end end, -- RLC
 	[0x08] = function(s)  end, -- NOP
 	[0x09] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.B, s.C)) end, -- DAD B
 	[0x0a] = function(s) s.A = s:getb(pair(s.B, s.C)) end, -- LDAX B
@@ -140,7 +150,7 @@ local ops = {
 	[0x0c] = function(s) s.C = flaghandle(s, s.C + 1) end, -- INR C
 	[0x0d] = function(s) s.C = flaghandle(s, s.C - 1) end, -- DCR C
 	[0x0e] = function(s, b) s.C = b end, -- MVI C,D8
-	-- Missing 0x0f: RRC (nil)
+	[0x0f] = function(s) s.A, s.cy = b_rsft(s.A) if s.cy then s.A = bor(s.A, 128) end end, -- RRC
 	[0x10] = function(s)  end, -- NOP
 	[0x11] = function(s, b2, b3) s.D = b3 s.E = b2 end, -- LXI D,D16
 	[0x12] = function(s) s:setb(pair(s.D, s.E), s.A) end, -- STAX D
@@ -148,7 +158,7 @@ local ops = {
 	[0x14] = function(s) s.D = flaghandle(s, s.D + 1) end, -- INR D
 	[0x15] = function(s) s.D = flaghandle(s, s.D - 1) end, -- DCR D
 	[0x16] = function(s, b) s.D = b end, -- MVI D, D8
-	-- Missing 0x17: RAL (nil)
+	[0x17] = function(s) local na, nc = b_lsft(s.A) if s.cy then s.A = bor(na, 1) else s.A = na end s.cy = nc end, -- RAL
 	[0x18] = function(s)  end, -- NOP
 	[0x19] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.D, s.E)) end, -- DAD D
 	[0x1a] = function(s) s.A = s:getb(pair(s.D, s.E)) end, -- LDAX D
@@ -156,7 +166,7 @@ local ops = {
 	[0x1c] = function(s) s.E = flaghandle(s, s.E + 1) end, -- INR E
 	[0x1d] = function(s) s.E = flaghandle(s, s.E - 1) end, -- DCR E
 	[0x1e] = function(s, b) s.E = b end, -- MVI E,D8
-	-- Missing 0x1f: RAR (nil)
+	[0x1f] = function(s) local na, nc = b_rsft(s.A) if s.cy then s.A = bor(na, 128) else s.A = na end s.cy = nc end, -- RAR
 	[0x20] = function(s)  end, -- NOP
 	[0x21] = function(s, b2, b3) s.H = b3 s.L = b2 end, -- LXI H,D16
 	[0x22] = function(s, b2, b3) local addr = pair(b3, b2) s:setb(addr, s.L) s:setb(a8(addr + 1), s.H) end, -- SHLD adr

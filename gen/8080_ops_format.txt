@@ -115,3 +115,9 @@ encode_psw(s)
 
 decode_psw(s, f)
  Sets the flags according to a PSW flags byte.
+
+b_lsft(a)
+ Shifts a left by 1 bit logically (leaving 0), returns ANDed a, and the boolean value of the bit that fell off.
+
+b_rsft(a)
+ Shifts a right by 1 bit logically (leaving 0), returns ANDed a, and the boolean value of the bit that fell off.

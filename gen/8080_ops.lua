@@ -3,7 +3,6 @@
 -- It gets generated into actual usable ops by the generator.
 -- Missing:
 -- (maybe out of date??)
--- RLC, RRC, RAL, RAR
 -- SHLD adr, LHLD adr
 -- STA adr, LDA adr
 -- HLT,
@@ -100,6 +99,14 @@ return {
 	["ANI B"] = "s.A = flaghandle(s, band(s.A, b)) s.cy = false",
 	["ORI B"] = "s.A = flaghandle(s, bor(s.A, b)) s.cy = false",
 	["XRI B"] = "s.A = flaghandle(s, bxor(s.A, b)) s.cy = false",
+
+	-- Rotation bitops
+
+	["RLC"] = "s.A, s.cy = b_lsft(s.A) if s.cy then s.A = bor(s.A, 1) end",
+	["RRC"] = "s.A, s.cy = b_rsft(s.A) if s.cy then s.A = bor(s.A, 128) end",
+
+	["RAL"] = "local na, nc = b_lsft(s.A) if s.cy then s.A = bor(na, 1) else s.A = na end s.cy = nc",
+	["RAR"] = "local na, nc = b_rsft(s.A) if s.cy then s.A = bor(na, 128) else s.A = na end s.cy = nc",
 
 	-- Jumps / Calls
 
