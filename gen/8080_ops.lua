@@ -2,11 +2,7 @@
 -- This is the actual logic.
 -- It gets generated into actual usable ops by the generator.
 -- Missing:
--- (maybe out of date??)
--- SHLD adr, LHLD adr
--- STA adr, LDA adr
--- HLT,
--- SPHL, EI, DI.
+-- HLT, EI, DI.
 --
 -- Not a lot!
 return {
