@@ -123,12 +123,12 @@ local function encode_psw(s)
 	return n
 end
 
-local function decode_psw(s)
-	s.cy = band(s, 1) ~= 0
-	s.p = band(s, 4) ~= 0
-	s.ac = band(s, 16) ~= 0
-	s.z = band(s, 64) ~= 0
-	s.s = band(s, 128) ~= 0
+local function decode_psw(s, n)
+	s.cy = band(n, 1) ~= 0
+	s.p = band(n, 4) ~= 0
+	s.ac = band(n, 16) ~= 0
+	s.z = band(n, 64) ~= 0
+	s.s = band(n, 128) ~= 0
 end
 
 local function b_lsft(a)
