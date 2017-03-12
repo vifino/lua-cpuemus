@@ -17,7 +17,8 @@ For most cases, the answer is ")" - only the 's' argument is passed.
 
 However, in cases that contain B or X, either 'b' or 'b2'/'b3' arguments are passed.
 For RB and B, this is just b - for RBB and X, this is b2 and b3.
-In X's case, "local addr = pair(b2, b3)" is added before the function code.
+In X's case, "local addr = pair(b3, b2)" is added before the function code.
+(Note that b3, b2 is used because the processor is little-endian.)
 
 Next, a lookup of the table in 8080_ops.lua is performed with the mnemonic-form (ex. "MVI RB") name.
 There are three cases that can occur for how the code is translated, mapped via the table opfnregs:

@@ -42,7 +42,7 @@ end
 function _M.disasm(inst, pco)
 	local pc = pco
 	local b = inst:getb(pc)
-	local l = opbs[b]
+	local l = opbs[b][1]
 	local name = opnames[b]
 	if name == nil then
 		return pco+1, fmt("%04x ???", pco)
@@ -84,7 +84,6 @@ end
 
 -- Run
 function _M.run(instance)
-	print("RUN")
 	local inst = instance
 
 	local pc = inst.PC
@@ -95,9 +94,9 @@ function _M.run(instance)
 	end
 	if not callop(inst, op, pc) then
 		inst.PC = pc + opl[1]
-		return opl[2]
+		return opnames[op], opl[2]
 	end
-	return opl[3]
+	return opnames[op], opl[3]
 end
 
 -- Create a new 8080 instance
