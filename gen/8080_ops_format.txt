@@ -49,3 +49,45 @@ L  |    |H      |
 ---|----|-------|
 M  |H,L |H,L    | <Notably, this does NOT retrieve the value - it just gives the HL pair.>
 SP |SP  |SP     |
+
+--- The 's' class fields ---
+(Note: Keep in mind the R/RP/etc. autoreplaces,
+       which SHOULD be prefixed with "s." for proper use.)
+
+s.A s.B s.C s.D s.E s.H s.L: Registers
+s.SP: Stack Pointer
+s.PC: Whatdayathink?
+ (Increased by the appropriate amount after execution, no matter what.
+  This should be expected.)
+
+s.cy: Carry Flag
+s.ac: Aux. Carry Flag
+s.p: Parity Flag
+s.s: Sign Flag
+s.z: Zero Flag
+s.int_enable: Interrupt Enable flag
+
+--- Available utility functions ---
+flaghandle(s, n, dont_set_carry):
+ Takes the (unANDed) 8-bit result of a calculation and adjusts:
+ Z: Is the ANDed value zero?
+ S: What is bit 7 (sign bit)?
+ then returns the ANDed value.
+
+addcda(a, b, cf) / subcda(a, b, cf):
+ Returns ANDed result, and AC.
+addcdn(a, b, cf) / subcdn(a, b, cf):
+ Returns ANDed result, and CY.
+addcdb(a, b, cf) / subcdb(a, b, cf):
+ Returns ANDed result, AC, and CY.
+
+ Note that in the above functions, "cf" should *generally* be omitted,
+  unless this is ADC/SBB, in which case it should be the CY flag.
+
+applyb(s, r, ac, cy)
+ Used with addcdb/subcdb to store ac/cy
+
+spair(s, <regname1>, <regname2>, v)
+ Writes to pair, and sets Carry accordingly.
+ (example: spair(s, "B", "C", 0x1234) sets B to 0x12 and C to 0x34,
+   turning off CY.)

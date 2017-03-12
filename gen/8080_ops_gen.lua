@@ -42,8 +42,7 @@ local function parity(x, size)
 	return band(p, 1) == 0	
 end
 
-local function flaghandle(inst, res, nocy)
-	if not nocy then inst.cy = (res > 0xFF) end
+local function flaghandle(inst, res)
 	res = band(res, 0xFF)
 	inst.z = (res == 0) -- is zero
 	inst.s = (band(res, 0x80) ~= 0) -- sign flag, if bit 7 set
@@ -51,12 +50,33 @@ local function flaghandle(inst, res, nocy)
 	return res
 end
 
-local function flaghandlency(inst, res)
-	res = band(res, 0xFF)
-	inst.z = (res == 0) -- is zero
-	inst.s = (band(res, 0x80) ~= 0) -- sign flag, if bit 7 set
-	inst.p = parity(res)
-	return res
+local function addcda(a, b)
+	local b1 = (a % 16) + (b % 16)
+	return band(a + b, 0xFF), b1 > 0x0F
+end
+local function addcdn(a, b)
+	return band(a + b, 0xFF), (a + b) > 0xFF
+end
+local function addcdb(a, b)
+	local b1 = (a % 16) + (b % 16)
+	return band(a + b, 0xFF), b1 > 0x0F, (a + b) > 0xFF
+end
+
+local function subcda(a, b)
+	local b1 = (a % 16) - (b % 16)
+	return band(a - b, 0xFF), b1 > 0x0F
+end
+local function subcdn(a, b)
+	return band(a - b, 0xFF), (a - b) < 0
+end
+local function subcdb(a, b)
+	local b1 = (a % 16) + (b % 16)
+	return band(a - b, 0xFF), b1 > 0x0F, (a - b) < 0
+end
+local function applyb(s, r, a, c)
+	s.ac = a
+	s.cy = c
+	return r
 end
 
 -- OPS

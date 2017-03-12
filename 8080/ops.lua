@@ -34,8 +34,7 @@ local function parity(x, size)
 	return band(p, 1) == 0	
 end
 
-local function flaghandle(inst, res, nocy)
-	if not nocy then inst.cy = (res > 0xFF) end
+local function flaghandle(inst, res)
 	res = band(res, 0xFF)
 	inst.z = (res == 0) -- is zero
 	inst.s = (band(res, 0x80) ~= 0) -- sign flag, if bit 7 set
@@ -43,12 +42,33 @@ local function flaghandle(inst, res, nocy)
 	return res
 end
 
-local function flaghandlency(inst, res)
-	res = band(res, 0xFF)
-	inst.z = (res == 0) -- is zero
-	inst.s = (band(res, 0x80) ~= 0) -- sign flag, if bit 7 set
-	inst.p = parity(res)
-	return res
+local function addcda(a, b)
+	local b1 = (a % 16) + (b % 16)
+	return band(a + b, 0xFF), b1 > 0x0F
+end
+local function addcdn(a, b)
+	return band(a + b, 0xFF), (a + b) > 0xFF
+end
+local function addcdb(a, b)
+	local b1 = (a % 16) + (b % 16)
+	return band(a + b, 0xFF), b1 > 0x0F, (a + b) > 0xFF
+end
+
+local function subcda(a, b)
+	local b1 = (a % 16) - (b % 16)
+	return band(a - b, 0xFF), b1 > 0x0F
+end
+local function subcdn(a, b)
+	return band(a - b, 0xFF), (a - b) < 0
+end
+local function subcdb(a, b)
+	local b1 = (a % 16) + (b % 16)
+	return band(a - b, 0xFF), b1 > 0x0F, (a - b) < 0
+end
+local function applyb(s, r, a, c)
+	s.ac = a
+	s.cy = c
+	return r
 end
 
 -- OPS
@@ -64,7 +84,7 @@ local ops = {
 	[0x08] = function(s)  end, -- NOP
 	[0x09] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.B, s.C)) end, -- DAD B
 	[0x0a] = function(s) s.A = s:getb(pair(s.B, s.C)) end, -- LDAX B
-	[0x0b] = function(s) local t = s.C - 1 if a8(t) == 0xFF then B = a8(B - 1) end s.C = t end, -- DCX B
+	[0x0b] = function(s) local t = a8(s.C - 1) if t == 0xFF then s.B = a8(s.B - 1) end s.C = t end, -- DCX B
 	[0x0c] = function(s) s.C = flaghandle(s, s.C + 1) end, -- INR C
 	[0x0d] = function(s) s.C = flaghandle(s, s.C - 1) end, -- DCR C
 	[0x0e] = function(s, b) s.C = b end, -- MVI C,D8
@@ -80,7 +100,7 @@ local ops = {
 	[0x18] = function(s)  end, -- NOP
 	[0x19] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.D, s.E)) end, -- DAD D
 	[0x1a] = function(s) s.A = s:getb(pair(s.D, s.E)) end, -- LDAX D
-	[0x1b] = function(s) local t = s.E - 1 if a8(t) == 0xFF then D = a8(D - 1) end s.E = t end, -- DCX D
+	[0x1b] = function(s) local t = a8(s.E - 1) if t == 0xFF then s.D = a8(s.D - 1) end s.E = t end, -- DCX D
 	[0x1c] = function(s) s.E = flaghandle(s, s.E + 1) end, -- INR E
 	[0x1d] = function(s) s.E = flaghandle(s, s.E - 1) end, -- DCR E
 	[0x1e] = function(s, b) s.E = b end, -- MVI E,D8
@@ -92,27 +112,27 @@ local ops = {
 	[0x24] = function(s) s.H = flaghandle(s, s.H + 1) end, -- INR H
 	[0x25] = function(s) s.H = flaghandle(s, s.H - 1) end, -- DCR H
 	[0x26] = function(s, b) s.H = b end, -- MVI H,D8
-	-- Missing 0x27: DAA
+	[0x27] = function(s) if band(s.A, 0x0F) > 9 or s.ac then  s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then  local na, ncy = addcdn(s.A, 0x60)  s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
 	[0x28] = function(s)  end, -- NOP
 	[0x29] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.H, s.L)) end, -- DAD H
 	-- Missing 0x2a: LHLD adr
-	[0x2b] = function(s) local t = s.L - 1 if a8(t) == 0xFF then H = a8(H - 1) end s.L = t end, -- DCX H
+	[0x2b] = function(s) local t = a8(s.L - 1) if t == 0xFF then s.H = a8(s.H - 1) end s.L = t end, -- DCX H
 	[0x2c] = function(s) s.L = flaghandle(s, s.L + 1) end, -- INR L
 	[0x2d] = function(s) s.L = flaghandle(s, s.L - 1) end, -- DCR L
 	[0x2e] = function(s, b) s.L = b end, -- MVI L, D8
-	-- Missing 0x2f: CMA
+	[0x2f] = function(s) s.A = bxor(s.A, 0xFF) end, -- CMA
 	[0x30] = function(s)  end, -- NOP
 	[0x31] = function(s, b2, b3) s.SP = pair(b3, b2) end, -- LXI SP, D16
 	-- Missing 0x32: STA adr
 	[0x33] = function(s) local t = s.SP + 1 if a8(t) == 0 then SP = a8(SP + 1) end s.SP = t end, -- INX SP
-	[0x34] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandlency(s, s:getb(loc) + 1)) end, -- INR M
-	[0x35] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandlency(s, s:getb(loc) - 1)) end, -- DCR M
+	[0x34] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandle(s, s:getb(loc) + 1)) end, -- INR M
+	[0x35] = function(s) local loc = pair(s.H, s.L) s:setb(loc, flaghandle(s, s:getb(loc) - 1)) end, -- DCR M
 	[0x36] = function(s, b) s:setb(pair(s.H, s.L), b) end, -- MVI M,D8
 	-- Missing 0x37: STC
 	[0x38] = function(s)  end, -- NOP
 	[0x39] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + s.SP) end, -- DAD SP
 	-- Missing 0x3a: LDA adr
-	[0x3b] = function(s) local t = s.SP - 1 if a8(t) == 0xFF then SP = a8(SP - 1) end s.SP = t end, -- DCX SP
+	[0x3b] = function(s) local t = a8(s.SP - 1) if t == 0xFF then s.SP = a8(s.SP - 1) end s.SP = t end, -- DCX SP
 	[0x3c] = function(s) s.A = flaghandle(s, s.A + 1) end, -- INR A
 	[0x3d] = function(s) s.A = flaghandle(s, s.A - 1) end, -- DCR A
 	[0x3e] = function(s, b) s.A = b end, -- MVI A,D8
@@ -181,62 +201,62 @@ local ops = {
 	[0x7d] = function(s) s.A = s.L end, -- MOV A,L
 	[0x7e] = function(s) s.A = s:getb(pair(s.H, s.L)) end, -- MOV A,M
 	[0x7f] = function(s) s.A = s.A end, -- MOV A,A
-	[0x80] = function(s) s.A = flaghandle(s, s.A + s.B) end, -- ADD B
-	[0x81] = function(s) s.A = flaghandle(s, s.A + s.C) end, -- ADD C
-	[0x82] = function(s) s.A = flaghandle(s, s.A + s.D) end, -- ADD D
-	[0x83] = function(s) s.A = flaghandle(s, s.A + s.E) end, -- ADD E
-	[0x84] = function(s) s.A = flaghandle(s, s.A + s.H) end, -- ADD H
-	[0x85] = function(s) s.A = flaghandle(s, s.A + s.L) end, -- ADD L
-	[0x86] = function(s) s.A = flaghandle(s, s.A + s:getb(pair(s.H, s.L))) end, -- ADD M
-	[0x87] = function(s) s.A = flaghandle(s, s.A + s.A) end, -- ADD A
-	[0x88] = function(s) s.A = flaghandle(s, s.A + s.B + (s.cy and 1 or 0)) end, -- ADC B
-	[0x89] = function(s) s.A = flaghandle(s, s.A + s.C + (s.cy and 1 or 0)) end, -- ADC C
-	[0x8a] = function(s) s.A = flaghandle(s, s.A + s.D + (s.cy and 1 or 0)) end, -- ADC D
-	[0x8b] = function(s) s.A = flaghandle(s, s.A + s.E + (s.cy and 1 or 0)) end, -- ADC E
-	[0x8c] = function(s) s.A = flaghandle(s, s.A + s.H + (s.cy and 1 or 0)) end, -- ADC H
-	[0x8d] = function(s) s.A = flaghandle(s, s.A + s.L + (s.cy and 1 or 0)) end, -- ADC L
-	[0x8e] = function(s) s.A = flaghandle(s, s.A + s:getb(pair(s.H, s.L)) + (s.cy and 1 or 0)) end, -- ADC M
-	[0x8f] = function(s) s.A = flaghandle(s, s.A + s.A + (s.cy and 1 or 0)) end, -- ADC A
-	[0x90] = function(s) s.A = flaghandle(s, s.A - s.B) end, -- SUB B
-	[0x91] = function(s) s.A = flaghandle(s, s.A - s.C) end, -- SUB C
-	[0x92] = function(s) s.A = flaghandle(s, s.A - s.D) end, -- SUB D
-	[0x93] = function(s) s.A = flaghandle(s, s.A - s.E) end, -- SUB E
-	[0x94] = function(s) s.A = flaghandle(s, s.A - s.H) end, -- SUB H
-	[0x95] = function(s) s.A = flaghandle(s, s.A - s.L) end, -- SUB L
-	[0x96] = function(s) s.A = flaghandle(s, s.A - s:getb(pair(s.H, s.L))) end, -- SUB M
-	[0x97] = function(s) s.A = flaghandle(s, s.A - s.A) end, -- SUB A
-	[0x98] = function(s) s.A = flaghandle(s, s.A - s.B - (s.cy and 1 or 0)) end, -- SBB B
-	[0x99] = function(s) s.A = flaghandle(s, s.A - s.C - (s.cy and 1 or 0)) end, -- SBB C
-	[0x9a] = function(s) s.A = flaghandle(s, s.A - s.D - (s.cy and 1 or 0)) end, -- SBB D
-	[0x9b] = function(s) s.A = flaghandle(s, s.A - s.E - (s.cy and 1 or 0)) end, -- SBB E
-	[0x9c] = function(s) s.A = flaghandle(s, s.A - s.H - (s.cy and 1 or 0)) end, -- SBB H
-	[0x9d] = function(s) s.A = flaghandle(s, s.A - s.L - (s.cy and 1 or 0)) end, -- SBB L
-	[0x9e] = function(s) s.A = flaghandle(s, s.A - s:getb(pair(s.H, s.L)) - (s.cy and 1 or 0)) end, -- SBB M
-	[0x9f] = function(s) s.A = flaghandle(s, s.A - s.A - (s.cy and 1 or 0)) end, -- SBB A
-	[0xa0] = function(s) s.A = flaghandle(s, band(s.A, s.B)) end, -- ANA B
-	[0xa1] = function(s) s.A = flaghandle(s, band(s.A, s.C)) end, -- ANA C
-	[0xa2] = function(s) s.A = flaghandle(s, band(s.A, s.D)) end, -- ANA D
-	[0xa3] = function(s) s.A = flaghandle(s, band(s.A, s.E)) end, -- ANA E
-	[0xa4] = function(s) s.A = flaghandle(s, band(s.A, s.H)) end, -- ANA H
-	[0xa5] = function(s) s.A = flaghandle(s, band(s.A, s.L)) end, -- ANA L
-	[0xa6] = function(s) s.A = flaghandle(s, band(s.A, s:getb(pair(s.H, s.L)))) end, -- ANA M
-	[0xa7] = function(s) s.A = flaghandle(s, band(s.A, s.A)) end, -- ANA A
-	[0xa8] = function(s) s.A = flaghandle(s, bxor(s.A, s.B)) end, -- XRA B
-	[0xa9] = function(s) s.A = flaghandle(s, bxor(s.A, s.C)) end, -- XRA C
-	[0xaa] = function(s) s.A = flaghandle(s, bxor(s.A, s.D)) end, -- XRA D
-	[0xab] = function(s) s.A = flaghandle(s, bxor(s.A, s.E)) end, -- XRA E
-	[0xac] = function(s) s.A = flaghandle(s, bxor(s.A, s.H)) end, -- XRA H
-	[0xad] = function(s) s.A = flaghandle(s, bxor(s.A, s.L)) end, -- XRA L
-	[0xae] = function(s) s.A = flaghandle(s, bxor(s.A, s:getb(pair(s.H, s.L)))) end, -- XRA M
-	[0xaf] = function(s) s.A = flaghandle(s, bxor(s.A, s.A)) end, -- XRA A
-	[0xb0] = function(s) s.A = flaghandle(s, bor(s.A, s.B)) end, -- ORA B
-	[0xb1] = function(s) s.A = flaghandle(s, bor(s.A, s.C)) end, -- ORA C
-	[0xb2] = function(s) s.A = flaghandle(s, bor(s.A, s.D)) end, -- ORA D
-	[0xb3] = function(s) s.A = flaghandle(s, bor(s.A, s.E)) end, -- ORA E
-	[0xb4] = function(s) s.A = flaghandle(s, bor(s.A, s.H)) end, -- ORA H
-	[0xb5] = function(s) s.A = flaghandle(s, bor(s.A, s.L)) end, -- ORA L
-	[0xb6] = function(s) s.A = flaghandle(s, bor(s.A, s:getb(pair(s.H, s.L)))) end, -- ORA M
-	[0xb7] = function(s) s.A = flaghandle(s, bor(s.A, s.A)) end, -- ORA A
+	[0x80] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.B))) end, -- ADD B
+	[0x81] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.C))) end, -- ADD C
+	[0x82] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.D))) end, -- ADD D
+	[0x83] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.E))) end, -- ADD E
+	[0x84] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.H))) end, -- ADD H
+	[0x85] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.L))) end, -- ADD L
+	[0x86] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s:getb(pair(s.H, s.L))))) end, -- ADD M
+	[0x87] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.A))) end, -- ADD A
+	[0x88] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.B, s.cy))) end, -- ADC B
+	[0x89] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.C, s.cy))) end, -- ADC C
+	[0x8a] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.D, s.cy))) end, -- ADC D
+	[0x8b] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.E, s.cy))) end, -- ADC E
+	[0x8c] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.H, s.cy))) end, -- ADC H
+	[0x8d] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.L, s.cy))) end, -- ADC L
+	[0x8e] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s:getb(pair(s.H, s.L)), s.cy))) end, -- ADC M
+	[0x8f] = function(s) s.A = flaghandle(s, applyb(s, addcdb(s.A, s.A, s.cy))) end, -- ADC A
+	[0x90] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.B))) end, -- SUB B
+	[0x91] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.C))) end, -- SUB C
+	[0x92] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.D))) end, -- SUB D
+	[0x93] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.E))) end, -- SUB E
+	[0x94] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.H))) end, -- SUB H
+	[0x95] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.L))) end, -- SUB L
+	[0x96] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s:getb(pair(s.H, s.L))))) end, -- SUB M
+	[0x97] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.A))) end, -- SUB A
+	[0x98] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.B, s.cy))) end, -- SBB B
+	[0x99] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.C, s.cy))) end, -- SBB C
+	[0x9a] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.D, s.cy))) end, -- SBB D
+	[0x9b] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.E, s.cy))) end, -- SBB E
+	[0x9c] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.H, s.cy))) end, -- SBB H
+	[0x9d] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.L, s.cy))) end, -- SBB L
+	[0x9e] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s:getb(pair(s.H, s.L)), s.cy))) end, -- SBB M
+	[0x9f] = function(s) s.A = flaghandle(s, applyb(s, subcdb(s.A, s.A, s.cy))) end, -- SBB A
+	[0xa0] = function(s) s.A = flaghandle(s, band(s.A, s.B)) s.cy = false end, -- ANA B
+	[0xa1] = function(s) s.A = flaghandle(s, band(s.A, s.C)) s.cy = false end, -- ANA C
+	[0xa2] = function(s) s.A = flaghandle(s, band(s.A, s.D)) s.cy = false end, -- ANA D
+	[0xa3] = function(s) s.A = flaghandle(s, band(s.A, s.E)) s.cy = false end, -- ANA E
+	[0xa4] = function(s) s.A = flaghandle(s, band(s.A, s.H)) s.cy = false end, -- ANA H
+	[0xa5] = function(s) s.A = flaghandle(s, band(s.A, s.L)) s.cy = false end, -- ANA L
+	[0xa6] = function(s) s.A = flaghandle(s, band(s.A, s:getb(pair(s.H, s.L)))) s.cy = false end, -- ANA M
+	[0xa7] = function(s) s.A = flaghandle(s, band(s.A, s.A)) s.cy = false end, -- ANA A
+	[0xa8] = function(s) s.A = flaghandle(s, bxor(s.A, s.B)) s.cy = false end, -- XRA B
+	[0xa9] = function(s) s.A = flaghandle(s, bxor(s.A, s.C)) s.cy = false end, -- XRA C
+	[0xaa] = function(s) s.A = flaghandle(s, bxor(s.A, s.D)) s.cy = false end, -- XRA D
+	[0xab] = function(s) s.A = flaghandle(s, bxor(s.A, s.E)) s.cy = false end, -- XRA E
+	[0xac] = function(s) s.A = flaghandle(s, bxor(s.A, s.H)) s.cy = false end, -- XRA H
+	[0xad] = function(s) s.A = flaghandle(s, bxor(s.A, s.L)) s.cy = false end, -- XRA L
+	[0xae] = function(s) s.A = flaghandle(s, bxor(s.A, s:getb(pair(s.H, s.L)))) s.cy = false end, -- XRA M
+	[0xaf] = function(s) s.A = flaghandle(s, bxor(s.A, s.A)) s.cy = false end, -- XRA A
+	[0xb0] = function(s) s.A = flaghandle(s, bor(s.A, s.B)) s.cy = false end, -- ORA B
+	[0xb1] = function(s) s.A = flaghandle(s, bor(s.A, s.C)) s.cy = false end, -- ORA C
+	[0xb2] = function(s) s.A = flaghandle(s, bor(s.A, s.D)) s.cy = false end, -- ORA D
+	[0xb3] = function(s) s.A = flaghandle(s, bor(s.A, s.E)) s.cy = false end, -- ORA E
+	[0xb4] = function(s) s.A = flaghandle(s, bor(s.A, s.H)) s.cy = false end, -- ORA H
+	[0xb5] = function(s) s.A = flaghandle(s, bor(s.A, s.L)) s.cy = false end, -- ORA L
+	[0xb6] = function(s) s.A = flaghandle(s, bor(s.A, s:getb(pair(s.H, s.L)))) s.cy = false end, -- ORA M
+	[0xb7] = function(s) s.A = flaghandle(s, bor(s.A, s.A)) s.cy = false end, -- ORA A
 	-- Missing 0xb8: CMP B
 	-- Missing 0xb9: CMP C
 	-- Missing 0xba: CMP D
@@ -251,7 +271,7 @@ local ops = {
 	[0xc3] = function(s, b2, b3) local addr = pair(b2, b3) s.PC = addr - 3 end, -- JMP adr
 	-- Missing 0xc4: CNZ adr
 	-- Missing 0xc5: PUSH B
-	[0xc6] = function(s, b) s.A = flaghandle(s, s.A + b) end, -- ADI D8
+	[0xc6] = function(s, b) s.A = flaghandle(s, applyb(s, addcdb(s.A, b))) end, -- ADI D8
 	-- Missing 0xc7: RST 0
 	-- Missing 0xc8: RZ
 	-- Missing 0xc9: RET
@@ -259,7 +279,7 @@ local ops = {
 	[0xcb] = function(s, b2, b3) local addr = pair(b2, b3) s.PC = addr - 3 end, -- JMP adr
 	-- Missing 0xcc: CZ adr
 	-- Missing 0xcd: CALL adr
-	-- Missing 0xce: ACI D8
+	[0xce] = function(s, b) s.A = flaghandle(s, applyb(s, addcdb(s.A, b, s.cy))) end, -- ACI D8
 	-- Missing 0xcf: RST 1
 	-- Missing 0xd0: RNC
 	-- Missing 0xd1: POP D
@@ -267,7 +287,7 @@ local ops = {
 	-- Missing 0xd3: OUT D8
 	-- Missing 0xd4: CNC adr
 	-- Missing 0xd5: PUSH D
-	[0xd6] = function(s, b) s.A = flaghandle(s, s.A - b - (s.cy and 1 or 0)) end, -- SUI D8
+	[0xd6] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b))) end, -- SUI D8
 	-- Missing 0xd7: RST 2
 	-- Missing 0xd8: RC
 	-- Missing 0xd9: RET
@@ -275,7 +295,7 @@ local ops = {
 	-- Missing 0xdb: IN D8
 	-- Missing 0xdc: CC adr
 	-- Missing 0xdd: CALL adr
-	[0xde] = function(s, b) s.A = flaghandle(s, s.A - b) end, -- SBI D8
+	[0xde] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b, s.cy))) end, -- SBI D8
 	-- Missing 0xdf: RST 3
 	-- Missing 0xe0: RPO
 	-- Missing 0xe1: POP H
@@ -283,7 +303,7 @@ local ops = {
 	-- Missing 0xe3: XTHL
 	-- Missing 0xe4: CPO adr
 	-- Missing 0xe5: PUSH H
-	[0xe6] = function(s, b) s.A = flaghandle(s, band(s.A, b)) end, -- ANI D8
+	[0xe6] = function(s, b) s.A = flaghandle(s, band(s.A, b)) s.cy = false end, -- ANI D8
 	-- Missing 0xe7: RST 4
 	-- Missing 0xe8: RPE
 	[0xe9] = function(s) s.PC = pair(s.H, s.L) - 1 end, -- PCHL
@@ -291,7 +311,7 @@ local ops = {
 	-- Missing 0xeb: XCHG
 	-- Missing 0xec: CPE adr
 	-- Missing 0xed: CALL adr
-	[0xee] = function(s, b) s.A = flaghandle(s, bxor(s.A, b)) end, -- XRI D8
+	[0xee] = function(s, b) s.A = flaghandle(s, bxor(s.A, b)) s.cy = false end, -- XRI D8
 	-- Missing 0xef: RST 5
 	-- Missing 0xf0: RP
 	-- Missing 0xf1: POP PSW
@@ -299,7 +319,7 @@ local ops = {
 	-- Missing 0xf3: DI
 	-- Missing 0xf4: CP adr
 	-- Missing 0xf5: PUSH PSW
-	[0xf6] = function(s, b) s.A = flaghandle(s, bor(s.A, b)) end, -- ORI D8
+	[0xf6] = function(s, b) s.A = flaghandle(s, bor(s.A, b)) s.cy = false end, -- ORI D8
 	-- Missing 0xf7: RST 6
 	-- Missing 0xf8: RM
 	-- Missing 0xf9: SPHL
