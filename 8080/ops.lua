@@ -159,7 +159,7 @@ local ops = {
 	-- Missing 0x1f: RAR (nil)
 	[0x20] = function(s)  end, -- NOP
 	[0x21] = function(s, b2, b3) s.H = b3 s.L = b2 end, -- LXI H,D16
-	-- Missing 0x22: SHLD adr (X)
+	[0x22] = function(s, b2, b3) local addr = pair(b3, b2) s:setb(addr, s.L) s:setb(a8(addr + 1), s.H) end, -- SHLD adr
 	[0x23] = function(s) local t = a8(s.L + 1) if t == 0 then s.H = a8(s.H + 1) end s.L = t end, -- INX H
 	[0x24] = function(s) s.H = flaghandle(s, s.H + 1) end, -- INR H
 	[0x25] = function(s) s.H = flaghandle(s, s.H - 1) end, -- DCR H
@@ -167,7 +167,7 @@ local ops = {
 	[0x27] = function(s) if band(s.A, 0x0F) > 9 or s.ac then  s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then  local na, ncy = addcdn(s.A, 0x60)  s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
 	[0x28] = function(s)  end, -- NOP
 	[0x29] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.H, s.L)) end, -- DAD H
-	-- Missing 0x2a: LHLD adr (X)
+	[0x2a] = function(s, b2, b3) local addr = pair(b3, b2) s.L = s:getb(addr) s.H = s:getb(a8(addr + 1)) end, -- LHLD adr
 	[0x2b] = function(s) local t = a8(s.L - 1) if t == 0xFF then s.H = a8(s.H - 1) end s.L = t end, -- DCX H
 	[0x2c] = function(s) s.L = flaghandle(s, s.L + 1) end, -- INR L
 	[0x2d] = function(s) s.L = flaghandle(s, s.L - 1) end, -- DCR L
@@ -374,7 +374,7 @@ local ops = {
 	[0xf6] = function(s, b) s.A = flaghandle(s, bor(s.A, b)) s.cy = false end, -- ORI D8
 	[0xf7] = function(s) s_call(s, 0x30, 1) return true end, -- RST 6
 	[0xf8] = function(s) if s.s == true then s.PC = s_pop16(s) return true end end, -- RET FS
-	-- Missing 0xf9: SPHL (nil)
+	[0xf9] = function(s) s.SP = pair(s.H, s.L) end, -- SPHL
 	[0xfa] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == true then s.PC = addr return true end end, -- JMP FS adr
 	-- Missing 0xfb: EI (nil)
 	[0xfc] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == true then s_call(s, addr, 3) return true end end, -- CALL FS adr
