@@ -7,11 +7,7 @@
 -- SHLD adr, LHLD adr
 -- STA adr, LDA adr
 -- HLT,
--- CMP <R/M>, CPI <d8>,
--- POP <R>, PUSH <R>,
 -- OUT <d8>, IN <d8>,
--- XTHL, XCHG,
--- POP PSW, PUSH PSW,
 -- SPHL, EI, DI.
 --
 -- Not a lot!
@@ -129,4 +125,9 @@ return {
 
 	["PUSH PSW"] = "s_push8(s, encode_psw(s)) s_push8(s, s.A)",
 	["POP PSW"] = "s.A = s_pop8(s) decode_psw(s, s_pop8(s))",
+
+	-- Exchangers
+
+	["XCHG"] = "local oh, ol = s.H, s.L s.H = s.D s.D = oh s.L = s.E s.E = ol",
+	["XTHL"] = "local oh, ol, a2 = s.H, s.L, band(s.SP + 1, 0xFFFF) s.L = s:getb(s.SP) s:setb(s.SP, ol) s.H = s:getb(a2) s:setb(a2, oh)",
 }

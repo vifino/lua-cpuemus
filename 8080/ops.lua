@@ -318,11 +318,11 @@ local ops = {
 	-- Missing 0xbe: CMP M (M)
 	[0xbf] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.A))) end, -- CMP A
 	[0xc0] = function(s) if s.z == false then s.PC = s_pop16(s) return true end end, -- RET !FZ
-	[0xc1] = function(s) s.B = s_pop8(s) end, -- POP B
+	[0xc1] = function(s) s.C = s_pop8(s) s.B = s_pop8(s) end, -- POP B
 	[0xc2] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == false then s.PC = addr return true end end, -- JMP !FZ adr
 	[0xc3] = function(s, b2, b3) local addr = pair(b3, b2) s.PC = addr return true end, -- JMP adr
 	[0xc4] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == false then s_call(s, addr, 3) return true end end, -- CALL !FZ adr
-	[0xc5] = function(s) s_push8(s, s.B) end, -- PUSH B
+	[0xc5] = function(s) s_push8(s, s.B) s_push8(s, s.C) end, -- PUSH B
 	[0xc6] = function(s, b) s.A = flaghandle(s, applyb(s, addcdb(s.A, b))) end, -- ADI D8
 	[0xc7] = function(s) s_call(s, 0x00, 1) return true end, -- RST 0
 	[0xc8] = function(s) if s.z == true then s.PC = s_pop16(s) return true end end, -- RET FZ
@@ -334,11 +334,11 @@ local ops = {
 	[0xce] = function(s, b) s.A = flaghandle(s, applyb(s, addcdb(s.A, b, s.cy))) end, -- ACI D8
 	[0xcf] = function(s) s_call(s, 0x08, 1) return true end, -- RST 1
 	[0xd0] = function(s) if s.cy == false then s.PC = s_pop16(s) return true end end, -- RET !FC
-	[0xd1] = function(s) s.D = s_pop8(s) end, -- POP D
+	[0xd1] = function(s) s.E = s_pop8(s) s.D = s_pop8(s) end, -- POP D
 	[0xd2] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == false then s.PC = addr return true end end, -- JMP !FC adr
 	-- Missing 0xd3: OUT D8 (B)
 	[0xd4] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == false then s_call(s, addr, 3) return true end end, -- CALL !FC adr
-	[0xd5] = function(s) s_push8(s, s.D) end, -- PUSH D
+	[0xd5] = function(s) s_push8(s, s.D) s_push8(s, s.E) end, -- PUSH D
 	[0xd6] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b))) end, -- SUI D8
 	[0xd7] = function(s) s_call(s, 0x10, 1) return true end, -- RST 2
 	[0xd8] = function(s) if s.cy == true then s.PC = s_pop16(s) return true end end, -- RET FC
@@ -350,17 +350,17 @@ local ops = {
 	[0xde] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b, s.cy))) end, -- SBI D8
 	[0xdf] = function(s) s_call(s, 0x18, 1) return true end, -- RST 3
 	[0xe0] = function(s) if s.p == false then s.PC = s_pop16(s) return true end end, -- RET !FPE
-	[0xe1] = function(s) s.H = s_pop8(s) end, -- POP H
+	[0xe1] = function(s) s.L = s_pop8(s) s.H = s_pop8(s) end, -- POP H
 	[0xe2] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == false then s.PC = addr return true end end, -- JMP !FPE adr
-	-- Missing 0xe3: XTHL (nil)
+	[0xe3] = function(s) local oh, ol, a2 = s.H, s.L, band(s.SP + 1, 0xFFFF) s.L = s:getb(s.SP) s:setb(s.SP, ol) s.H = s:getb(a2) s:setb(a2, oh) end, -- XTHL
 	[0xe4] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == false then s_call(s, addr, 3) return true end end, -- CALL !FPE adr
-	[0xe5] = function(s) s_push8(s, s.H) end, -- PUSH H
+	[0xe5] = function(s) s_push8(s, s.H) s_push8(s, s.L) end, -- PUSH H
 	[0xe6] = function(s, b) s.A = flaghandle(s, band(s.A, b)) s.cy = false end, -- ANI D8
 	[0xe7] = function(s) s_call(s, 0x20, 1) return true end, -- RST 4
 	[0xe8] = function(s) if s.p == true then s.PC = s_pop16(s) return true end end, -- RET FPE
 	[0xe9] = function(s) s.PC = pair(s.H, s.L) return true end, -- PCHL
 	[0xea] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == true then s.PC = addr return true end end, -- JMP FPE adr
-	-- Missing 0xeb: XCHG (nil)
+	[0xeb] = function(s) local oh, ol = s.H, s.L s.H = s.D s.D = oh s.L = s.E s.E = ol end, -- XCHG
 	[0xec] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == true then s_call(s, addr, 3) return true end end, -- CALL FPE adr
 	[0xed] = function(s, b2, b3) local addr = pair(b3, b2) s_call(s, addr, 3) return true end, -- CALL adr
 	[0xee] = function(s, b) s.A = flaghandle(s, bxor(s.A, b)) s.cy = false end, -- XRI D8
