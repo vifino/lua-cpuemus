@@ -108,8 +108,8 @@ return {
 	["CALL X"] = "s_call(s, addr, 3) return true",
 	["CALL FX"] = "if F then s_call(s, addr, 3) return true end",
 
-	["RET"] = "s.PC = s_pop(s) return true",
-	["RET F"] = "if F then s.PC = s_pop(s) return true end",
+	["RET"] = "s.PC = s_pop16(s) return true",
+	["RET F"] = "if F then s.PC = s_pop16(s) return true end",
 
 	-- RSTs
 
@@ -121,4 +121,12 @@ return {
 	["RST 5"] = "s_call(s, 0x28, 1) return true",
 	["RST 6"] = "s_call(s, 0x30, 1) return true",
 	["RST 7"] = "s_call(s, 0x38, 1) return true",
+
+	-- PUSH/POP
+
+	["PUSH R"] = "s_push8(s, s.R)",
+	["POP R"] = "s.R = s_pop8(s)",
+
+	["PUSH PSW"] = "s_push8(s, encode_psw(s)) s_push8(s, s.A)",
+	["POP PSW"] = "s.A = s_pop8(s) decode_psw(s, s_pop8(s))",
 }

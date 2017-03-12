@@ -72,7 +72,7 @@ local function applyb(s, r, a, c)
 	return r
 end
 
-local function s_push(s, res)
+local function s_push16(s, res)
 	local high, low = rshift(band(res, 0xFF00), 8), band(res, 0xFF)
 	s.SP = band(s.SP - 1, 0xFFFF)
 	s:setb(s.SP, high)
@@ -80,7 +80,7 @@ local function s_push(s, res)
 	s:setb(s.SP, low)
 end
 
-local function s_pop(s)
+local function s_pop16(s)
 	local low = s:getb(s.SP)
 	s.SP = band(s.SP + 1, 0xFFFF)
 	local high = s:getb(s.SP)
@@ -88,9 +88,39 @@ local function s_pop(s)
 	return pair(high, low)
 end
 
+local function s_push8(s, res)
+	s.SP = band(s.SP - 1, 0xFFFF)
+	s:setb(s.SP, res)
+end
+
+local function s_pop8(s)
+	local res = s:getb(s.SP)
+	s.SP = band(s.SP + 1, 0xFFFF)
+	return res
+end
+
 local function s_call(s, t, l)
-	s_push(s, band(s.PC + l, 0xFFFF))
+	s_push16(s, band(s.PC + l, 0xFFFF))
 	s.PC = t
+end
+
+local function encode_psw(s)
+	-- SZ0A0P1C
+	local n = 2
+	if s.cy then n = n + 1 end
+	if s.p then n = n + 4 end
+	if s.ac then n = n + 16 end
+	if s.z then n = n + 64 end
+	if s.s then n = n + 128 end
+	return n
+end
+
+local function decode_psw(s)
+	s.cy = band(s, 1) ~= 0
+	s.p = band(s, 4) ~= 0
+	s.ac = band(s, 16) ~= 0
+	s.z = band(s, 64) ~= 0
+	s.s = band(s, 128) ~= 0
 end
 
 -- OPS
@@ -287,47 +317,47 @@ local ops = {
 	[0xbd] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.L))) end, -- CMP L
 	-- Missing 0xbe: CMP M (M)
 	[0xbf] = function(s) flaghandle(s, applyb(s, subcdb(s.A, s.A))) end, -- CMP A
-	[0xc0] = function(s) if s.z == false then s.PC = s_pop(s) return true end end, -- RET !FZ
-	-- Missing 0xc1: POP B (R)
+	[0xc0] = function(s) if s.z == false then s.PC = s_pop16(s) return true end end, -- RET !FZ
+	[0xc1] = function(s) s.B = s_pop8(s) end, -- POP B
 	[0xc2] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == false then s.PC = addr return true end end, -- JMP !FZ adr
 	[0xc3] = function(s, b2, b3) local addr = pair(b3, b2) s.PC = addr return true end, -- JMP adr
 	[0xc4] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == false then s_call(s, addr, 3) return true end end, -- CALL !FZ adr
-	-- Missing 0xc5: PUSH B (R)
+	[0xc5] = function(s) s_push8(s, s.B) end, -- PUSH B
 	[0xc6] = function(s, b) s.A = flaghandle(s, applyb(s, addcdb(s.A, b))) end, -- ADI D8
 	[0xc7] = function(s) s_call(s, 0x00, 1) return true end, -- RST 0
-	[0xc8] = function(s) if s.z == true then s.PC = s_pop(s) return true end end, -- RET FZ
-	[0xc9] = function(s) s.PC = s_pop(s) return true end, -- RET
+	[0xc8] = function(s) if s.z == true then s.PC = s_pop16(s) return true end end, -- RET FZ
+	[0xc9] = function(s) s.PC = s_pop16(s) return true end, -- RET
 	[0xca] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == true then s.PC = addr return true end end, -- JMP FZ adr
 	[0xcb] = function(s, b2, b3) local addr = pair(b3, b2) s.PC = addr return true end, -- JMP adr
 	[0xcc] = function(s, b2, b3) local addr = pair(b3, b2) if s.z == true then s_call(s, addr, 3) return true end end, -- CALL FZ adr
 	[0xcd] = function(s, b2, b3) local addr = pair(b3, b2) s_call(s, addr, 3) return true end, -- CALL adr
 	[0xce] = function(s, b) s.A = flaghandle(s, applyb(s, addcdb(s.A, b, s.cy))) end, -- ACI D8
 	[0xcf] = function(s) s_call(s, 0x08, 1) return true end, -- RST 1
-	[0xd0] = function(s) if s.cy == false then s.PC = s_pop(s) return true end end, -- RET !FC
-	-- Missing 0xd1: POP D (R)
+	[0xd0] = function(s) if s.cy == false then s.PC = s_pop16(s) return true end end, -- RET !FC
+	[0xd1] = function(s) s.D = s_pop8(s) end, -- POP D
 	[0xd2] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == false then s.PC = addr return true end end, -- JMP !FC adr
 	-- Missing 0xd3: OUT D8 (B)
 	[0xd4] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == false then s_call(s, addr, 3) return true end end, -- CALL !FC adr
-	-- Missing 0xd5: PUSH D (R)
+	[0xd5] = function(s) s_push8(s, s.D) end, -- PUSH D
 	[0xd6] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b))) end, -- SUI D8
 	[0xd7] = function(s) s_call(s, 0x10, 1) return true end, -- RST 2
-	[0xd8] = function(s) if s.cy == true then s.PC = s_pop(s) return true end end, -- RET FC
-	[0xd9] = function(s) s.PC = s_pop(s) return true end, -- RET
+	[0xd8] = function(s) if s.cy == true then s.PC = s_pop16(s) return true end end, -- RET FC
+	[0xd9] = function(s) s.PC = s_pop16(s) return true end, -- RET
 	[0xda] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == true then s.PC = addr return true end end, -- JMP FC adr
 	-- Missing 0xdb: IN D8 (B)
 	[0xdc] = function(s, b2, b3) local addr = pair(b3, b2) if s.cy == true then s_call(s, addr, 3) return true end end, -- CALL FC adr
 	[0xdd] = function(s, b2, b3) local addr = pair(b3, b2) s_call(s, addr, 3) return true end, -- CALL adr
 	[0xde] = function(s, b) s.A = flaghandle(s, applyb(s, subcdb(s.A, b, s.cy))) end, -- SBI D8
 	[0xdf] = function(s) s_call(s, 0x18, 1) return true end, -- RST 3
-	[0xe0] = function(s) if s.p == false then s.PC = s_pop(s) return true end end, -- RET !FPE
-	-- Missing 0xe1: POP H (R)
+	[0xe0] = function(s) if s.p == false then s.PC = s_pop16(s) return true end end, -- RET !FPE
+	[0xe1] = function(s) s.H = s_pop8(s) end, -- POP H
 	[0xe2] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == false then s.PC = addr return true end end, -- JMP !FPE adr
 	-- Missing 0xe3: XTHL (nil)
 	[0xe4] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == false then s_call(s, addr, 3) return true end end, -- CALL !FPE adr
-	-- Missing 0xe5: PUSH H (R)
+	[0xe5] = function(s) s_push8(s, s.H) end, -- PUSH H
 	[0xe6] = function(s, b) s.A = flaghandle(s, band(s.A, b)) s.cy = false end, -- ANI D8
 	[0xe7] = function(s) s_call(s, 0x20, 1) return true end, -- RST 4
-	[0xe8] = function(s) if s.p == true then s.PC = s_pop(s) return true end end, -- RET FPE
+	[0xe8] = function(s) if s.p == true then s.PC = s_pop16(s) return true end end, -- RET FPE
 	[0xe9] = function(s) s.PC = pair(s.H, s.L) return true end, -- PCHL
 	[0xea] = function(s, b2, b3) local addr = pair(b3, b2) if s.p == true then s.PC = addr return true end end, -- JMP FPE adr
 	-- Missing 0xeb: XCHG (nil)
@@ -335,15 +365,15 @@ local ops = {
 	[0xed] = function(s, b2, b3) local addr = pair(b3, b2) s_call(s, addr, 3) return true end, -- CALL adr
 	[0xee] = function(s, b) s.A = flaghandle(s, bxor(s.A, b)) s.cy = false end, -- XRI D8
 	[0xef] = function(s) s_call(s, 0x28, 1) return true end, -- RST 5
-	[0xf0] = function(s) if s.s == false then s.PC = s_pop(s) return true end end, -- RET !FS
-	-- Missing 0xf1: POP PSW (R)
+	[0xf0] = function(s) if s.s == false then s.PC = s_pop16(s) return true end end, -- RET !FS
+	[0xf1] = function(s) s.A = s_pop8(s) decode_psw(s, s_pop8(s)) end, -- POP PSW
 	[0xf2] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == false then s.PC = addr return true end end, -- JMP !FS adr
 	-- Missing 0xf3: DI (nil)
 	[0xf4] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == false then s_call(s, addr, 3) return true end end, -- CALL !FS adr
-	-- Missing 0xf5: PUSH PSW (R)
+	[0xf5] = function(s) s_push8(s, encode_psw(s)) s_push8(s, s.A) end, -- PUSH PSW
 	[0xf6] = function(s, b) s.A = flaghandle(s, bor(s.A, b)) s.cy = false end, -- ORI D8
 	[0xf7] = function(s) s_call(s, 0x30, 1) return true end, -- RST 6
-	[0xf8] = function(s) if s.s == true then s.PC = s_pop(s) return true end end, -- RET FS
+	[0xf8] = function(s) if s.s == true then s.PC = s_pop16(s) return true end end, -- RET FS
 	-- Missing 0xf9: SPHL (nil)
 	[0xfa] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == true then s.PC = addr return true end end, -- JMP FS adr
 	-- Missing 0xfb: EI (nil)

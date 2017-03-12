@@ -80,7 +80,7 @@ local function applyb(s, r, a, c)
 	return r
 end
 
-local function s_push(s, res)
+local function s_push16(s, res)
 	local high, low = rshift(band(res, 0xFF00), 8), band(res, 0xFF)
 	s.SP = band(s.SP - 1, 0xFFFF)
 	s:setb(s.SP, high)
@@ -88,7 +88,7 @@ local function s_push(s, res)
 	s:setb(s.SP, low)
 end
 
-local function s_pop(s)
+local function s_pop16(s)
 	local low = s:getb(s.SP)
 	s.SP = band(s.SP + 1, 0xFFFF)
 	local high = s:getb(s.SP)
@@ -96,9 +96,39 @@ local function s_pop(s)
 	return pair(high, low)
 end
 
+local function s_push8(s, res)
+	s.SP = band(s.SP - 1, 0xFFFF)
+	s:setb(s.SP, res)
+end
+
+local function s_pop8(s)
+	local res = s:getb(s.SP)
+	s.SP = band(s.SP + 1, 0xFFFF)
+	return res
+end
+
 local function s_call(s, t, l)
-	s_push(s, band(s.PC + l, 0xFFFF))
+	s_push16(s, band(s.PC + l, 0xFFFF))
 	s.PC = t
+end
+
+local function encode_psw(s)
+	-- SZ0A0P1C
+	local n = 2
+	if s.cy then n = n + 1 end
+	if s.p then n = n + 4 end
+	if s.ac then n = n + 16 end
+	if s.z then n = n + 64 end
+	if s.s then n = n + 128 end
+	return n
+end
+
+local function decode_psw(s)
+	s.cy = band(s, 1) ~= 0
+	s.p = band(s, 4) ~= 0
+	s.ac = band(s, 16) ~= 0
+	s.z = band(s, 64) ~= 0
+	s.s = band(s, 128) ~= 0
 end
 
 -- OPS
