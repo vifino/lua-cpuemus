@@ -169,7 +169,7 @@ local ops = {
 	[0x1f] = function(s) local na, nc = b_rsft(s.A) if s.cy then s.A = bor(na, 128) else s.A = na end s.cy = nc end, -- RAR
 	[0x20] = function(s)  end, -- NOP
 	[0x21] = function(s, b2, b3) s.H = b3 s.L = b2 end, -- LXI H,D16
-	[0x22] = function(s, b2, b3) local addr = pair(b3, b2) s:setb(addr, s.L) s:setb(a8(addr + 1), s.H) end, -- SHLD adr
+	[0x22] = function(s, b2, b3) local addr = pair(b3, b2) s:setb(addr, s.L) s:setb(band(addr + 1, 0xFFFF), s.H) end, -- SHLD adr
 	[0x23] = function(s) local t = a8(s.L + 1) if t == 0 then s.H = a8(s.H + 1) end s.L = t end, -- INX H
 	[0x24] = function(s) s.H = flaghandle(s, s.H + 1) end, -- INR H
 	[0x25] = function(s) s.H = flaghandle(s, s.H - 1) end, -- DCR H
@@ -177,7 +177,7 @@ local ops = {
 	[0x27] = function(s) if band(s.A, 0x0F) > 9 or s.ac then  s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then  local na, ncy = addcdn(s.A, 0x60)  s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
 	[0x28] = function(s)  end, -- NOP
 	[0x29] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.H, s.L)) end, -- DAD H
-	[0x2a] = function(s, b2, b3) local addr = pair(b3, b2) s.L = s:getb(addr) s.H = s:getb(a8(addr + 1)) end, -- LHLD adr
+	[0x2a] = function(s, b2, b3) local addr = pair(b3, b2) s.L = s:getb(addr) s.H = s:getb(band(addr + 1, 0xFFFF)) end, -- LHLD adr
 	[0x2b] = function(s) local t = a8(s.L - 1) if t == 0xFF then s.H = a8(s.H - 1) end s.L = t end, -- DCX H
 	[0x2c] = function(s) s.L = flaghandle(s, s.L + 1) end, -- INR L
 	[0x2d] = function(s) s.L = flaghandle(s, s.L - 1) end, -- DCR L

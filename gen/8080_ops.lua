@@ -31,8 +31,8 @@ return {
 	["STA X"] = "s:setb(addr, s.A)",
 	["LDAX R"] = "s.A = s:getb(RP)",
 	["STAX R"] = "s:setb(RP, s.A)",
-	["LHLD X"] = "s.L = s:getb(addr) s.H = s:getb(a8(addr + 1))",
-	["SHLD X"] = "s:setb(addr, s.L) s:setb(a8(addr + 1), s.H)",
+	["LHLD X"] = "s.L = s:getb(addr) s.H = s:getb(band(addr + 1, 0xFFFF))",
+	["SHLD X"] = "s:setb(addr, s.L) s:setb(band(addr + 1, 0xFFFF), s.H)",
 
 	["SPHL"] = "s.SP = pair(s.H, s.L)",
 

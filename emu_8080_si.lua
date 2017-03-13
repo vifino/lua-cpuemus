@@ -38,7 +38,8 @@ end
 local function set(inst, i, v)
 	local p = bitops.band(i, 0x3FFF)
 	if p < 0x2000 then
-		mem:set(bitops.band(p, 0x1FFF) + 0x2000, v)
+		--error("Game wrote into ROM ~ decimal " .. p)
+		--mem:set(bitops.band(p, 0x1FFF) + 0x2000, v)
 		return
 	end
 	mem:set(p, v)
@@ -50,7 +51,7 @@ local shiftregofs = 0
 local function iog(inst, i)
 	i = bitops.band(i, 255)
 	if i == 1 then
-		return 0x81
+		return 1
 	end
 	if i == 2 then
 		return 0
@@ -91,9 +92,9 @@ local timer_draw = math.floor((timeframe * 0.5) * cycleratio)
 local timerval = timer_draw
 local nexttimer = timerval
 
-inst.PC = 0x1000
-
 while true do
+	--if inst.PC == 0x15D3 then io.stderr:write("BFR\n") inst:dump() end
+	--if inst.PC == 0x15D6 then io.stderr:write("AFT\n") inst:dump() end
 	local t = nexttimer
 	if not inst.halted then
 		local pc = inst.PC

@@ -65,13 +65,13 @@ end
 local function callop(inst, op, p1, p2)
 	local opfn = ops[op]
 	if opfn == nil then
-		error(fmt("NYI OP: 0x%02x %s", op, opnames[op]))
+		error(fmt("NYI OP: 0x%02x (PC after exec would be 0x%02x): %s", op, inst.PC, opnames[op]))
 	end
 	local r, r2 = pcall(opfn, inst, p1, p2)
 	if r then
 		return r2
 	end
-	error(fmt("Error in op 0x%02x (%s): %s", op, opnames[op], tostring(r2)))
+	error(fmt("Error in op 0x%02x (%s) @ (PC after exec would be 0x%02x): %s", op, opnames[op], inst.PC, tostring(r2)))
 end
 
 function _M.interrupt(inst, ...)
@@ -115,6 +115,11 @@ function _M.run(inst)
 		return opnames[op], opl[2]
 	end
 	return opnames[op], opl[3]
+end
+
+function _M.dump(inst)
+	io.stderr:write(fmt("PC %04x SP %04x A %02x\n", inst.PC, inst.SP, inst.A))
+	io.stderr:write(fmt("BC %02x%02x DE %02x%02x HL %02x%02x\n", inst.B, inst.C, inst.D, inst.E, inst.H, inst.L))
 end
 
 -- Create a new 8080 instance
