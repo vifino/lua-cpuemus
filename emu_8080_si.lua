@@ -48,13 +48,14 @@ end
 local shiftreg = 0
 local shiftregofs = 0
 
+local buttons1, buttons2 = 1, 0
 local function iog(inst, i)
 	i = bitops.band(i, 255)
 	if i == 1 then
-		return 1
+		return buttons1
 	end
 	if i == 2 then
-		return 0
+		return buttons2
 	end
 	if i == 3 then
 		--io.stderr:write("TEST\n")
@@ -126,6 +127,8 @@ while true do
 				io.write(string.char(get(inst, i)))
 			end
 			io.flush()
+			buttons1 = string.byte(io.read(1))
+			buttons2 = string.byte(io.read(1))
 			timerval = timer_vblank
 		end
 		nexttimer = timerval
