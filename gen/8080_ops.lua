@@ -1,10 +1,6 @@
 -- OP template table.
 -- This is the actual logic.
 -- It gets generated into actual usable ops by the generator.
--- Missing:
--- HLT, EI, DI.
---
--- Not a lot!
 return {
 
 	-- Misc.
@@ -141,12 +137,11 @@ return {
 	["XTHL"] = "local oh, ol, a2 = s.H, s.L, band(s.SP + 1, 0xFFFF) s.L = s:getb(s.SP) s:setb(s.SP, ol) s.H = s:getb(a2) s:setb(a2, oh)",
 
 	-- IO
-	
+
 	["IN B"] = "s.A = s:iogb(bor(s.B * 256, b))",
 	["OUT B"] = "s:iosb(bor(s.B * 256, b), s.A)",
 
 	-- Interrupts
-
 	["HLT"] = "s.halted = true",
 	["EI"] = "s.int_enable = true",
 	["DI"] = "s.int_enable = false",

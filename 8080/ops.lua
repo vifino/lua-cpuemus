@@ -32,7 +32,7 @@ local function parity(x, size)
 		end
 		x = rshift(x, 1)
 	end
-	return band(p, 1) == 0	
+	return band(p, 1) == 0
 end
 
 local function flaghandle(inst, res)
@@ -392,7 +392,7 @@ local ops = {
 	[0xfe] = function(s, b) flaghandle(s, applyb(s, subcdb(s.A, b))) end, -- CPI D8
 	[0xff] = function(s) s_call(s, 0x38) return true end, -- RST 7
 }
-	
+
 return {
 	inst_bitops = function(bit32)
 		band, bor, bxor = bit32.band, bit32.bor, bit32.bxor

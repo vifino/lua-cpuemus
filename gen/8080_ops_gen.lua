@@ -40,7 +40,7 @@ local function parity(x, size)
 		end
 		x = rshift(x, 1)
 	end
-	return band(p, 1) == 0	
+	return band(p, 1) == 0
 end
 
 local function flaghandle(inst, res)
@@ -171,13 +171,13 @@ local function arg_types(argstr)
 			rstr = rstr .. "x"
 			tinsert(real, "X")
 		elseif T == "D8" then
-	    		tstr = tstr .. "B"
-		    	rstr = rstr .. "b"
-		    	tinsert(real, "B")
+			tstr = tstr .. "B"
+			rstr = rstr .. "b"
+			tinsert(real, "B")
 		elseif T == "D16" then
-		    	tstr = tstr .. "BB"
-	    		rstr = rstr .. "bb"
-		    	tinsert(real, "BB")
+			tstr = tstr .. "BB"
+			rstr = rstr .. "bb"
+			tinsert(real, "BB")
 		elseif T == "M" then
 			tstr = tstr .. T
 			rstr = rstr .. T
@@ -251,11 +251,11 @@ local regpair = {
 
 local function genop(list, op, args, rargs, real)
 	if not args then
-			local opf = list[op]
-			if not opf then return nil end
-			return "function(s) "..opf.." end"
+		local opf = list[op]
+		if not opf then return nil end
+		return "function(s) "..opf.." end"
 	end
-	
+
 	local opf = list[op .. " " .. rargs]
 	if opf == false then
 		return nil
@@ -309,7 +309,7 @@ end
 -- Post generation
 io.write([[
 }
-	
+
 return {
 	inst_bitops = function(bit32)
 		band, bor, bxor = bit32.band, bit32.bor, bit32.bxor

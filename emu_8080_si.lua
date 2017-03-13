@@ -1,5 +1,6 @@
 #!/usr/bin/env lua
--- ZPU Emulator: Example usage.
+-- 8080 Emu: Space Invaders.
+-- Run tools/si.sh with spaceinvaders.rom in the base directory.
 
 local arg = arg or {...}
 
@@ -27,10 +28,6 @@ local rom = memlib.backend.rostring(t, memsz)
 f:close()
 
 local mem = memlib.backend.rwoverlay(rom, memsz)
-
--- Address handlers/Peripherals
---local addr_handlers = {}
---local comp = memlib.compose(mem, addr_handlers)
 
 local function get(inst, i)
 	return mem:get(bitops.band(i, 0x3FFF))
