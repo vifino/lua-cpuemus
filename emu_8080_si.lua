@@ -36,7 +36,12 @@ local function get(inst, i)
 	return mem:get(bitops.band(i, 0x3FFF))
 end
 local function set(inst, i, v)
-	return mem:set(bitops.band(i, 0x3FFF), v)
+	local p = bitops.band(i, 0x3FFF)
+	if p < 0x2000 then
+		mem:set(bitops.band(p, 0x1FFF) + 0x2000, v)
+		return
+	end
+	mem:set(p, v)
 end
 
 local shiftreg = 0
@@ -45,7 +50,7 @@ local shiftregofs = 0
 local function iog(inst, i)
 	i = bitops.band(i, 255)
 	if i == 1 then
-		return 1
+		return 0x81
 	end
 	if i == 2 then
 		return 0
@@ -63,7 +68,7 @@ local function ios(inst, i, v)
 		shiftreg = shiftreg + (v * 256)
 	end
 	if i == 2 then
-		shiftregofs = v -- unsure if this should be % 8
+		shiftregofs = v % 8 -- unsure if this should be % 8
 	end
 end
 
@@ -76,15 +81,17 @@ local inst = l8080.new(get, set, iog, ios)
 -- for now I'm just assuming vblank takes as long as draw
 -- bleh, int.fail errors. just giving it 1000000 cycles per frame (ridiculous I know)
 -- ok, new plan, interrupt some amount of instructions after it's ready.
-local vblank = false
+local vblank = true
 
-local cycleratio = 40000000
+local cycleratio = 2000000
 local timeframe = 1 / 60
-local timer_vblank = math.floor((timeframe * 0.1) * cycleratio)
-local timer_draw = math.floor((timeframe * 0.9) * cycleratio)
+local timer_vblank = math.floor((timeframe * 0.5) * cycleratio)
+local timer_draw = math.floor((timeframe * 0.5) * cycleratio)
 
 local timerval = timer_draw
 local nexttimer = timerval
+
+inst.PC = 0x1000
 
 while true do
 	local t = nexttimer
@@ -94,14 +101,18 @@ while true do
 		t = c
 		--print(string.format("0x%04x: %s -> 0x%04x (%i cycles)", pc, n, inst.PC, c))
 	end
+	if not inst.int_enable then
+		nexttimer = timerval
+	end
 	if nexttimer > 0 then
 		nexttimer = nexttimer - t
 	else
 		if vblank then
 			--io.stderr:write("Interrupt VBLK_LEAVE\n")
 			if not inst:interrupt(0xD7) then error("Int failed") end
-			-- Dump frame data
-			for i = 0x2400, 0x3FFF do
+			-- Dump upper half of frame data
+			-- 96 * 32 = 3072 (0xC00)
+			for i = 0x2400, 0x2FFF do
 				io.write(string.char(get(inst, i)))
 			end
 			io.flush()
@@ -109,6 +120,11 @@ while true do
 		else
 			--io.stderr:write("Interrupt VBLK_ENTER\n")
 			if not inst:interrupt(0xCF) then error("int failed") end
+			-- Dump lower half of frame data.
+			for i = 0x3000, 0x3FFF do
+				io.write(string.char(get(inst, i)))
+			end
+			io.flush()
 			timerval = timer_vblank
 		end
 		nexttimer = timerval

@@ -12,7 +12,7 @@ return {
 	["NOP"] = "",
 
 	["LXI RBB"] = "s.R = b3 s.P = b2",
-	["LXI SPbb"] = "s.R = pair(b3, b2)", -- unsure if correct
+	["LXI SPbb"] = "s.SP = pair(b3, b2)",
 
 	["MVI RB"] = "s.R = b",
 	["MVI MB"] = "s:setb(RP, b)",
