@@ -107,8 +107,8 @@ local function s_pop8(s)
 	return res
 end
 
-local function s_call(s, t, l)
-	s_push16(s, band(s.PC + l, 0xFFFF))
+local function s_call(s, t)
+	s_push16(s, band(s.PC, 0xFFFF))
 	s.PC = t
 end
 
@@ -133,12 +133,12 @@ end
 
 local function b_lsft(a)
 	local n = band(a * 2, 0xFF)
-	return n, band(a, 0x80)
+	return n, band(a, 0x80) ~= 0
 end
 
 local function b_rsft(a)
 	local n = band(math.floor(a / 2), 0x7F)
-	return n, band(a, 1)
+	return n, band(a, 1) ~= 0
 end
 
 -- OPS

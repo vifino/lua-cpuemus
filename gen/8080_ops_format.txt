@@ -107,8 +107,8 @@ s_push16(s)
 s_pop16(s)
  Pops and returns a 16-bit word from stack.
 
-s_call(s, a, l)
- Pushes s.PC + l to stack, then sets s.PC to a.
+s_call(s, a)
+ Pushes s.PC to stack, then sets s.PC to a.
 
 encode_psw(s)
  Returns an encoded PSW flags byte.

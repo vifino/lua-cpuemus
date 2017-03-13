@@ -110,22 +110,22 @@ return {
 	["JMP X"] = "s.PC = addr return true",
 	["JMP FX"] = "if F then s.PC = addr return true end",
 
-	["CALL X"] = "s_call(s, addr, 3) return true",
-	["CALL FX"] = "if F then s_call(s, addr, 3) return true end",
+	["CALL X"] = "s_call(s, addr) return true",
+	["CALL FX"] = "if F then s_call(s, addr) return true end",
 
 	["RET"] = "s.PC = s_pop16(s) return true",
 	["RET F"] = "if F then s.PC = s_pop16(s) return true end",
 
 	-- RSTs
 
-	["RST 0"] = "s_call(s, 0x00, 1) return true",
-	["RST 1"] = "s_call(s, 0x08, 1) return true",
-	["RST 2"] = "s_call(s, 0x10, 1) return true",
-	["RST 3"] = "s_call(s, 0x18, 1) return true",
-	["RST 4"] = "s_call(s, 0x20, 1) return true",
-	["RST 5"] = "s_call(s, 0x28, 1) return true",
-	["RST 6"] = "s_call(s, 0x30, 1) return true",
-	["RST 7"] = "s_call(s, 0x38, 1) return true",
+	["RST 0"] = "s_call(s, 0x00) return true",
+	["RST 1"] = "s_call(s, 0x08) return true",
+	["RST 2"] = "s_call(s, 0x10) return true",
+	["RST 3"] = "s_call(s, 0x18) return true",
+	["RST 4"] = "s_call(s, 0x20) return true",
+	["RST 5"] = "s_call(s, 0x28) return true",
+	["RST 6"] = "s_call(s, 0x30) return true",
+	["RST 7"] = "s_call(s, 0x38) return true",
 
 	-- PUSH/POP
 
@@ -144,4 +144,10 @@ return {
 	
 	["IN B"] = "s.A = s:iogb(bor(s.B * 256, b))",
 	["OUT B"] = "s:iosb(bor(s.B * 256, b), s.A)",
+
+	-- Interrupts
+
+	["HLT"] = "s.halted = true",
+	["EI"] = "s.int_enable = true",
+	["DI"] = "s.int_enable = false",
 }

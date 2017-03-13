@@ -62,29 +62,36 @@ function _M.disasm(inst, pco)
 	return pco+l, fmt("%04x %s", pco, name)
 end
 
-local function callop(instance, op, pc)
-	local inst = instance
-	local getb = inst.getb
-	local op = getb(inst, pc or 0)
-	local l = opbs[op]
+local function callop(inst, op, p1, p2)
 	local opfn = ops[op]
 	if opfn == nil then
 		error(fmt("NYI OP: 0x%02x %s", op, opnames[op]))
 	end
+	local r, r2 = pcall(opfn, inst, p1, p2)
+	if r then
+		return r2
+	end
+	error(fmt("Error in op 0x%02x (%s): %s", op, opnames[op], tostring(r2)))
+end
 
-	-- We could do dynamic arg calling here, but overhead.
-	if l == 1 then
-		return opfn(inst)
-	elseif l == 2 then
-		return opfn(inst, getb(inst, pc+1))
+function _M.interrupt(inst, ...)
+	if inst.int_enable then
+		-- The interrupt occurs.
+		inst.int_enable = false
+		callop(inst, ...)
+		return true
 	else
-		return opfn(inst, getb(inst, pc+1), getb(inst, pc+2))
+		-- 'Try again later'.
+		return false
 	end
 end
 
 -- Run
-function _M.run(instance)
-	local inst = instance
+function _M.run(inst)
+
+	if inst.halted then
+		error("The machine halted. You're supposed to stop executing now, or run time forward to the next interrupt.")
+	end
 
 	local pc = inst.PC
 	local op = inst:getb(pc)
@@ -92,12 +99,19 @@ function _M.run(instance)
 	if not opl then
 		error(fmt("l8080: Unknown OP 0x%02x", op))
 	end
-	local ok, res = pcall(callop, inst, op, pc)
-	if not ok then
-		error(fmt("In OP 0x%02x (%s): %s", op, opnames[op], tostring(res)))
+	pc = band(pc + 1, 0xFFFF)
+	local p1, p2
+	if opl[1] == 2 then
+		p1 = inst:getb(pc)
+		pc = band(pc + 1, 0xFFFF)
+	elseif opl[1] == 3 then
+		p1 = inst:getb(pc)
+		pc = band(pc + 1, 0xFFFF)
+		p2 = inst:getb(pc)
+		pc = band(pc + 1, 0xFFFF)
 	end
-	if not res then
-		inst.PC = pc + opl[1]
+	inst.PC = pc
+	if not callop(inst, op, p1, p2) then
 		return opnames[op], opl[2]
 	end
 	return opnames[op], opl[3]
@@ -128,7 +142,12 @@ function _M.new(getb, setb, iogb, iosb)
 
 	l8080.SP = 0
 	l8080.PC = 0
-	l8080.int_enable = 0
+
+	-- Internal flags
+	l8080.halted = false
+	l8080.int_enable = false
+
+	-- Flags
 
 	l8080.z = true
 	l8080.s = true
