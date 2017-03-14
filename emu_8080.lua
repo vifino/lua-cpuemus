@@ -1,5 +1,5 @@
 #!/usr/bin/env lua
--- ZPU Emulator: Example usage.
+-- 8080 Emulator: Example usage.
 
 local arg = arg or {...}
 
@@ -53,8 +53,9 @@ end
 
 local inst = l8080.new(get, set, iog, ios)
 
+local fmt = string.format
 while true do
 	local pc = inst.PC
 	local n, c = inst:run()
-	print(string.format("0x%04x: %s -> 0x%04x (%i cycles)", pc, n, inst.PC, c))
+	print(fmt("0x%04x: %s -> 0x%04x (%i cycles)", pc, n, inst.PC, c))
 end

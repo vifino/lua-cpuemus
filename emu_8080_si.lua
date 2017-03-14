@@ -22,6 +22,13 @@ l8080.set_bit32(bitops)
 
 local memlib = require("memlib")
 
+-- Localize functions
+local band, rshift, lshift = bitops.band, bitops.rshift, bitops.lshift
+local iowr, iord = io.write, io.read
+local sbyte, schar = string.byte, string.char
+local mfloor = math.floor
+local ioflush = io.flush
+
 -- Memory: ROM, RAM and peripherals.
 local t = f:read(memsz)
 local rom = memlib.backend.rostring(t, memsz)
@@ -30,10 +37,10 @@ f:close()
 local mem = memlib.backend.rwoverlay(rom, memsz)
 
 local function get(inst, i)
-	return mem:get(bitops.band(i, 0x3FFF))
+	return mem:get(band(i, 0x3FFF))
 end
 local function set(inst, i, v)
-	local p = bitops.band(i, 0x3FFF)
+	local p = band(i, 0x3FFF)
 	if p < 0x2000 then
 		--error("Game wrote into ROM ~ decimal " .. p)
 		--mem:set(bitops.band(p, 0x1FFF) + 0x2000, v)
@@ -47,7 +54,7 @@ local shiftregofs = 0
 
 local buttons1, buttons2 = 1, 0
 local function iog(inst, i)
-	i = bitops.band(i, 255)
+	i = band(i, 255)
 	if i == 1 then
 		return buttons1
 	end
@@ -56,14 +63,14 @@ local function iog(inst, i)
 	end
 	if i == 3 then
 		--io.stderr:write("TEST\n")
-		return bitops.rshift(bitops.band(bitops.lshift(shiftreg, shiftregofs), 0xFF00), 8)
+		return rshift(band(lshift(shiftreg, shiftregofs), 0xFF00), 8)
 	end
 	return 0
 end
 local function ios(inst, i, v)
-	i = bitops.band(i, 255)
+	i = band(i, 255)
 	if i == 4 then
-		shiftreg = math.floor(shiftreg / 256)
+		shiftreg = mfloor(shiftreg / 256)
 		shiftreg = shiftreg + (v * 256)
 	end
 	if i == 2 then
@@ -84,8 +91,8 @@ local vblank = true
 
 local cycleratio = 2000000
 local timeframe = 1 / 60
-local timer_vblank = math.floor((timeframe * 0.5) * cycleratio)
-local timer_draw = math.floor((timeframe * 0.5) * cycleratio)
+local timer_vblank = mfloor((timeframe * 0.5) * cycleratio)
+local timer_draw = mfloor((timeframe * 0.5) * cycleratio)
 
 local timerval = timer_draw
 local nexttimer = timerval
@@ -112,20 +119,20 @@ while true do
 			-- Dump upper half of frame data
 			-- 96 * 32 = 3072 (0xC00)
 			for i = 0x2400, 0x2FFF do
-				io.write(string.char(get(inst, i)))
+				iowr(schar(get(inst, i)))
 			end
-			io.flush()
+			ioflush()
 			timerval = timer_draw
 		else
 			--io.stderr:write("Interrupt VBLK_ENTER\n")
 			if not inst:interrupt(0xCF) then error("int failed") end
 			-- Dump lower half of frame data.
 			for i = 0x3000, 0x3FFF do
-				io.write(string.char(get(inst, i)))
+				iowr(schar(get(inst, i)))
 			end
-			io.flush()
-			buttons1 = string.byte(io.read(1))
-			buttons2 = string.byte(io.read(1))
+			ioflush()
+			buttons1 = sbyte(io.read(1))
+			buttons2 = sbyte(io.read(1))
 			timerval = timer_vblank
 		end
 		nexttimer = timerval

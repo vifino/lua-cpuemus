@@ -23,7 +23,7 @@ end
 -- If the number of set bits is odd, it will return true.
 -- If the number bits is even, it will return false.
 -- Notably, size should be the amount of bits *minus 1*. So parity(res, 7) for the common 8-bit case.
-local function parity(x, size)
+local function parity_r(x, size)
 	local p = 0
 	x = band(x, lshift(1, size) - 1)
 	for i=0, size do
@@ -35,11 +35,24 @@ local function parity(x, size)
 	return band(p, 1) == 0
 end
 
+-- Because bitops are rather slow,
+-- caching them could be a good advantage.
+local paritycache = {}
+local function parity(x)
+	local cx = paritycache[x]
+	if cx then
+		return cx
+	end
+	local r = parity_r(x, 7)
+	paritycache[x] = r
+	return r
+end
+
 local function flaghandle(inst, res)
 	res = band(res, 0xFF)
 	inst.z = (res == 0) -- is zero
 	inst.s = (band(res, 0x80) ~= 0) -- sign flag, if bit 7 set
-	inst.p = parity(res, 7)
+	inst.p = parity(res)
 	return res
 end
 
@@ -174,7 +187,7 @@ local ops = {
 	[0x24] = function(s) s.H = flaghandle(s, s.H + 1) end, -- INR H
 	[0x25] = function(s) s.H = flaghandle(s, s.H - 1) end, -- DCR H
 	[0x26] = function(s, b) s.H = b end, -- MVI H,D8
-	[0x27] = function(s) if band(s.A, 0x0F) > 9 or s.ac then  s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then  local na, ncy = addcdn(s.A, 0x60)  s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
+	[0x27] = function(s) if band(s.A, 0x0F) > 9 or s.ac then s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then local na, ncy = addcdn(s.A, 0x60) s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
 	[0x28] = function(s)  end, -- NOP
 	[0x29] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.H, s.L)) end, -- DAD H
 	[0x2a] = function(s, b2, b3) local addr = pair(b3, b2) s.L = s:getb(addr) s.H = s:getb(band(addr + 1, 0xFFFF)) end, -- LHLD adr

@@ -7,6 +7,7 @@ _M.__index = _M
 -- Local function cache.
 local fmt = string.format
 local bnot, band, bor, bxor, lshift, rshift
+local pcall = pcall
 
 -- Lookup tables. Hallelujah.
 -- Big as hell, so not stored here.
@@ -88,26 +89,26 @@ end
 
 -- Run
 function _M.run(inst)
-
 	if inst.halted then
 		error("The machine halted. You're supposed to stop executing now, or run time forward to the next interrupt.")
 	end
 
 	local pc = inst.PC
-	local op = inst:getb(pc)
+	local getb = inst.getb
+	local op = getb(inst, pc)
 	local opl = opbs[op]
-	if not opl then
+	if opl == nil then
 		error(fmt("l8080: Unknown OP 0x%02x", op))
 	end
 	pc = band(pc + 1, 0xFFFF)
 	local p1, p2
 	if opl[1] == 2 then
-		p1 = inst:getb(pc)
+		p1 = getb(inst, pc)
 		pc = band(pc + 1, 0xFFFF)
 	elseif opl[1] == 3 then
-		p1 = inst:getb(pc)
+		p1 = getb(inst, pc)
 		pc = band(pc + 1, 0xFFFF)
-		p2 = inst:getb(pc)
+		p2 = getb(inst, pc)
 		pc = band(pc + 1, 0xFFFF)
 	end
 	inst.PC = pc

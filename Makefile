@@ -12,5 +12,5 @@
 8080/ops.lua: doc/8080_ops.txt gen/8080_ops_gen.lua gen/8080_ops.lua 8080/opnames.lua
 	lua gen/8080_ops_gen.lua > 8080/ops.lua
 
-clean: 
+clean:
 	rm -f 8080/opbs.lua 8080/opnames.lua 8080/ops.lua

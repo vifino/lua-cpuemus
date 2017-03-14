@@ -33,11 +33,11 @@ return {
 	["SPHL"] = "s.SP = pair(s.H, s.L)",
 
 	["DAA"] =
-		"if band(s.A, 0x0F) > 9 or s.ac then " ..
+		"if band(s.A, 0x0F) > 9 or s.ac then" ..
 		" s.A, s.ac = addcda(s.A, 6) " ..
 		"else s.ac = false end " ..
-		"if band(s.A, 0xF0) > 0x90 or s.cy then " ..
-		" local na, ncy = addcdn(s.A, 0x60) " ..
+		"if band(s.A, 0xF0) > 0x90 or s.cy then" ..
+		" local na, ncy = addcdn(s.A, 0x60)" ..
 		" s.A = na s.cy = s.cy or ncy " ..
 		"end " .. -- CY is not affected otherwise for whatever reason
 		"s.A = flaghandle(s, s.A)", -- clean up remaining flags

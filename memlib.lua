@@ -140,8 +140,7 @@ end
 -- Simple read-only string backend.
 -- Incapable of writing, but efficient for readonly operation!
 local function rostr_get(memory, i)
-	if (i < memory.start_off) or (i > memory.end_pos) then return 0 end
-	i = i - memory.start_off
+	if (i > memory.end_pos) then return 0 end
 	-- Only do string index compensation at the last possible moment.
 	return strbyte(memory.str, i + 1)
 end
@@ -151,23 +150,12 @@ local function rostr_werr()
 end
 
 -- Returns two values:
--- 1. the amount of NULLs stripped,
---    which also serves as the first non-NULL memory index.
--- 2. the stripped string
-local function rostr_stripleadingnulls(str)
-	-- The reason for not using \x00 is because LuaJIT doesn't like it.
-	-- At all. It seems to consider it termination of pattern, AFAIK.
-	-- Instead, this ever-so-slightly slower classifier is required.
-	-- Same applies for the next function.
-	local _, l2 = strfind(str, "^[^\x01-\xFF]+")
-	if (not l2) or l2 == 0 then return 0, str end
-	return l2, strsub(str, l2 + 1)
-end
-
--- Returns two values:
 -- 1. The last non-NULL memory index, or -1 if the memory is empty.
 -- 2. The stripped string.
 local function rostr_striptrailingnulls(str)
+	-- The reason for not using \x00 is because LuaJIT doesn't like it.
+	-- At all. It seems to consider it termination of pattern, AFAIK.
+	-- Instead, this ever-so-slightly slower classifier is required.
 	local l2, _ = strfind(str, "[^\x01-\xFF]+$")
 	if not l2 then return (str:len() - 1), str end
 	return l2 - 2, strsub(str, 1, l2 - 1)
@@ -196,13 +184,11 @@ local fns_rostring = {
 function _M.backend.rostring(string, memsz)
 	local size = memsz or #string
 	local start_off, end_pos
-	--start_off, string = rostr_stripleadingnulls(string) -- pretty useless.
 	end_pos, string = rostr_striptrailingnulls(string)
 	return {
 		-- Don't go changing any of these.
 		str = string,
 		size = size,
-		start_off = 0,
 		end_pos = end_pos,
 
 		get = fns_rostring.get,
@@ -217,11 +203,7 @@ end
 -- Read/Write overlay for existing memory backend.
 -- Useful for ROM/RAM.
 local function rwovl_read(romem, ovlt, i)
-	local val = ovlt[i]
-	if not val then
-		return romem:get(i)
-	end
-	return val
+	return ovlt[i] or romem:get(i)
 end
 
 local fns_rwovl = {
