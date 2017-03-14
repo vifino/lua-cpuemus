@@ -274,12 +274,12 @@ local bit32 = get_bit32()
 local ljbit = bit and fixupall_signed(bit) or {}
 
 bitlib = bit_select({
-	[{'bnot', 0xFFFFFFFA}] = {bit32.bnot, ljbit.bnot, bit_l52('~', true), fallback.bnot},
-	[{'band', 4}] = {bit32.band, ljbit.band, bit_l52('&'), fallback.band},
-	[{'bor', 5}] = {bit32.bor, ljbit.bor, bit_l52('|'), fallback.bor},
-	[{'bxor', 1}] = {bit32.bxor, ljbit.bxor, bit_l52('~'), fallback.bxor},
-	[{'lshift', 80, fixup_lshift}] = {bit32.lshift, ljbit.lshift, bit_l52('<<'), fallback.lshift},
-	[{'rshift', 0, fixup_rshift}] = {bit32.rshift, ljbit.rshift, bit_l52('>>'), fallback.rshift},
+	[{'bnot', 0xFFFFFFFA}] = {bit_l52('~', true), bit32.bnot, ljbit.bnot, fallback.bnot},
+	[{'band', 4}] = {bit_l52('&'), bit32.band, ljbit.band, fallback.band},
+	[{'bor', 5}] = {bit_l52('|'), bit32.bor, ljbit.bor, fallback.bor},
+	[{'bxor', 1}] = {bit_l52('~'), bit32.bxor, ljbit.bxor, fallback.bxor},
+	[{'lshift', 80, fixup_lshift}] = {bit_l52('<<'), bit32.lshift, ljbit.lshift, fallback.lshift},
+	[{'rshift', 0, fixup_rshift}] = {bit_l52('>>'), bit32.rshift, ljbit.rshift, fallback.rshift},
 	[{'arshift', 0}] = {bit32.arshift, ljbit.arshift, fallback.arshift},
 })
 
