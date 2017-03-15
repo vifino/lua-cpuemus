@@ -2,9 +2,7 @@
 -- This is the actual logic.
 -- It gets generated into actual usable ops by the generator.
 return {
-
 	-- Misc.
-
 	["NOP"] = "",
 
 	["LXI RBB"] = "s.R = b3 s.P = b2",
@@ -78,7 +76,6 @@ return {
 	["CMP M"] = "flaghandle(s, applyb(s, subcdb(s.A, s:getb(RP))))",
 
 	-- Bitops
-
 	["ANA R"] = "s.A = flaghandle(s, band(s.A, s.R)) s.cy = false",
 	["ANA M"] = "s.A = flaghandle(s, band(s.A, s:getb(RP))) s.cy = false",
 
@@ -93,7 +90,6 @@ return {
 	["XRI B"] = "s.A = flaghandle(s, bxor(s.A, b)) s.cy = false",
 
 	-- Rotation bitops
-
 	["RLC"] = "s.A, s.cy = b_lsft(s.A) if s.cy then s.A = bor(s.A, 1) end",
 	["RRC"] = "s.A, s.cy = b_rsft(s.A) if s.cy then s.A = bor(s.A, 128) end",
 
@@ -101,7 +97,6 @@ return {
 	["RAR"] = "local na, nc = b_rsft(s.A) if s.cy then s.A = bor(na, 128) else s.A = na end s.cy = nc",
 
 	-- Jumps / Calls
-
 	["PCHL"] = "s.PC = pair(s.H, s.L) return true",
 	["JMP X"] = "s.PC = addr return true",
 	["JMP FX"] = "if F then s.PC = addr return true end",
@@ -113,7 +108,6 @@ return {
 	["RET F"] = "if F then s.PC = s_pop16(s) return true end",
 
 	-- RSTs
-
 	["RST 0"] = "s_call(s, 0x00) return true",
 	["RST 1"] = "s_call(s, 0x08) return true",
 	["RST 2"] = "s_call(s, 0x10) return true",
@@ -124,7 +118,6 @@ return {
 	["RST 7"] = "s_call(s, 0x38) return true",
 
 	-- PUSH/POP
-
 	["PUSH R"] = "s_push8(s, s.R) s_push8(s, s.P)",
 	["POP R"] = "s.P = s_pop8(s) s.R = s_pop8(s)",
 
@@ -132,14 +125,14 @@ return {
 	["POP PSW"] = "s.A = s_pop8(s) decode_psw(s, s_pop8(s))",
 
 	-- Exchangers
-
 	["XCHG"] = "local oh, ol = s.H, s.L s.H = s.D s.D = oh s.L = s.E s.E = ol",
 	["XTHL"] = "local oh, ol, a2 = s.H, s.L, band(s.SP + 1, 0xFFFF) s.L = s:getb(s.SP) s:setb(s.SP, ol) s.H = s:getb(a2) s:setb(a2, oh)",
 
 	-- IO
-
-	["IN B"] = "s.A = s:iogb(bor(s.B * 256, b))",
-	["OUT B"] = "s:iosb(bor(s.B * 256, b), s.A)",
+	-- Normally, this would also prepend A to the address,
+	-- but this is unnecessary here. One has access to A.
+	["IN B"] = "s.A = s:iogb(b)",
+	["OUT B"] = "s:iosb(b, s.A)",
 
 	-- Interrupts
 	["HLT"] = "s.halted = true",
