@@ -31,10 +31,10 @@ local ioflush = io.flush
 
 -- Memory: ROM, RAM and peripherals.
 local t = f:read(memsz)
-local rom = memlib.backend.rostring(t, memsz)
+local rom = memlib.new("rostring", t, memsz)
 f:close()
 
-local mem = memlib.backend.rwoverlay(rom, memsz)
+local mem = memlib.new("rwoverlay", rom, memsz)
 
 local function get(inst, i)
 	return mem:get(band(i, 0x3FFF))
@@ -54,7 +54,6 @@ local shiftregofs = 0
 
 local buttons1, buttons2 = 1, 0
 local function iog(inst, i)
-	i = band(i, 255)
 	if i == 1 then
 		return buttons1
 	end
@@ -68,7 +67,6 @@ local function iog(inst, i)
 	return 0
 end
 local function ios(inst, i, v)
-	i = band(i, 255)
 	if i == 4 then
 		shiftreg = mfloor(shiftreg / 256)
 		shiftreg = shiftreg + (v * 256)
@@ -131,8 +129,8 @@ while true do
 				iowr(schar(get(inst, i)))
 			end
 			ioflush()
-			buttons1 = sbyte(io.read(1))
-			buttons2 = sbyte(io.read(1))
+			buttons1 = sbyte(iord(1))
+			buttons2 = sbyte(iord(1))
 			timerval = timer_vblank
 		end
 		nexttimer = timerval

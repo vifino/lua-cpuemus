@@ -23,10 +23,10 @@ local memlib = require("memlib")
 
 -- Memory: ROM, RAM and peripherals.
 local t = f:read(memsz)
-local rom = memlib.backend.rostring(t, memsz)
+local rom = memlib.new("rostrring", t, memsz)
 f:close()
 
-local mem = memlib.backend.rwoverlay(rom, memsz)
+local mem = memlib.new("rwoverlay", rom, memsz)
 
 -- Address handlers/Peripherals
 --local addr_handlers = {}
@@ -40,12 +40,10 @@ local function set(inst, i, v)
 end
 
 local function iog(inst, i)
-	i = bitops.band(i, 255)
 	if i == 0 then return string.byte(io.read(1)) end
 	return 0
 end
 local function ios(inst, i, v)
-	i = bitops.band(i, 255)
 	if i == 0 then
 		print(string.char(v))
 	end

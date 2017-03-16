@@ -23,10 +23,10 @@ local memlib = require("memlib")
 
 -- Memory: ROM, RAM and peripherals.
 local rom_data = f:read("*a")
-local rom = memlib.backend.rostring(rom_data:sub(1, 128), memsz)
+local rom = memlib.new("rostring", rom_data:sub(1, 128), memsz)
 f:close()
 
-local mem = memlib.backend.rwoverlay(rom, memsz)
+local mem = memlib.new()"rwoverlay",rom, memsz)
 
 -- Address handlers/Peripherals
 --local addr_handlers = {}
@@ -70,7 +70,6 @@ local function dmaInject(buf)
 end
 
 local function iog(inst, i)
-	i = bitops.band(i, 255)
 	if i == 0 then return 0xFF end -- Console input ready
 	if i == 1 then return string.byte(io.read(1)) end -- Console data
 
@@ -86,7 +85,6 @@ local function iog(inst, i)
 	return 0
 end
 local function ios(inst, i, v)
-	i = bitops.band(i, 255)
 	if i == 1 then io.write(string.char(v)) end
 
 	if i == 10 then fdcDrive = v end

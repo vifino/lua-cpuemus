@@ -56,10 +56,25 @@ local function set_set32(memory, i, v)
 end
 
 -- Public Helpers
+function _M.new(driver, ...)
+	local drv = _M.backend[driver]
+	if drv then
+		return drv(...)
+	end
+	error("No such driver: "..tostring(driver), 1)
+end
+
 function _M.copy(mem1, mem2)
 	for i=0, mem1.size, 4 do
-		local v = mem1:get32(i)
-		mem2:set32(i. v)
+		local v = mem1:get32be(i)
+		mem2:set32be(i, v)
+	end
+end
+
+function _M.copyto(memsrc, addroff, memdst)
+	for i=0, memsrc.size, 4 do
+		local v = memsrc:get32be(i)
+		memdst:set32be(addroff + i, v)
 	end
 end
 
