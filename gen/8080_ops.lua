@@ -40,7 +40,8 @@ return {
 		"end " .. -- CY is not affected otherwise for whatever reason
 		"s.A = flaghandle(s, s.A)", -- clean up remaining flags
 
-	-- Increment/decrement (all forms). These don't do anything with carry/aux.carry flags.
+	-- Increment/decrement (all forms). These don't do anything with carry, but they DO with Aux. Carry.
+	-- TODO: Implement aux.carry for these.
 	["INR R"] = "s.R = flaghandle(s, s.R + 1)",
 	["INR M"] = "local loc = RP s:setb(loc, flaghandle(s, s:getb(loc) + 1))",
 	["INX R"] = "local t = a8(s.P + 1) if t == 0 then s.R = a8(s.R + 1) end s.P = t",

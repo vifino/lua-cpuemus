@@ -118,9 +118,23 @@ function _M.run(inst)
 	return opnames[op], opl[3]
 end
 
+local function dumpflag(inst, f)
+	if inst[f] then
+		io.stderr:write(f .. ":Y ")
+	else
+		io.stderr:write(f .. ":N ")
+	end
+end
+
 function _M.dump(inst)
 	io.stderr:write(fmt("PC %04x SP %04x A %02x\n", inst.PC, inst.SP, inst.A))
 	io.stderr:write(fmt("BC %02x%02x DE %02x%02x HL %02x%02x\n", inst.B, inst.C, inst.D, inst.E, inst.H, inst.L))
+	dumpflag(inst, "s")
+	dumpflag(inst, "p")
+	dumpflag(inst, "z")
+	dumpflag(inst, "cy")
+	dumpflag(inst, "ac")
+	io.stderr:write("\n")
 end
 
 -- Create a new 8080 instance

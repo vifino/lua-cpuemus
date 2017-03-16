@@ -64,28 +64,41 @@ local function flaghandle(inst, res)
 	return res
 end
 
-local function addcda(a, b)
+local function mdc(b, c)
+	if c then
+		return b + 1
+	end
+	return b
+end
+
+local function addcda(a, b, c)
+	b = mdc(b, c)
 	local b1 = (a % 16) + (b % 16)
 	return band(a + b, 0xFF), b1 > 0x0F
 end
-local function addcdn(a, b)
+local function addcdn(a, b, c)
+	b = mdc(b, c)
 	return band(a + b, 0xFF), (a + b) > 0xFF
 end
-local function addcdb(a, b)
+local function addcdb(a, b, c)
+	b = mdc(b, c)
 	local b1 = (a % 16) + (b % 16)
 	return band(a + b, 0xFF), b1 > 0x0F, (a + b) > 0xFF
 end
 
-local function subcda(a, b)
-	local b1 = (a % 16) - (b % 16)
-	return band(a - b, 0xFF), b1 > 0x0F
+local function subcda(a, b, c)
+	b = mdc(b, c)
+	local b1 = (a % 16) + (b % 16)
+	return band(a - b, 0xFF), b1 > 0xF
 end
-local function subcdn(a, b)
+local function subcdn(a, b, c)
+	b = mdc(b, c)
 	return band(a - b, 0xFF), (a - b) < 0
 end
-local function subcdb(a, b)
+local function subcdb(a, b, c)
+	b = mdc(b, c)
 	local b1 = (a % 16) + (b % 16)
-	return band(a - b, 0xFF), b1 > 0x0F, (a - b) < 0
+	return band(a - b, 0xFF), b1 > 0xF, (a - b) < 0
 end
 local function applyb(s, r, a, c)
 	s.ac = a

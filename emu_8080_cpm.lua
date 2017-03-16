@@ -116,6 +116,6 @@ local fmt = string.format
 while true do
 	local pc = inst.PC
 	local n, c = inst:run()
-	print(fmt("0x%04x: %s -> 0x%04x (%i cycles)", pc, n, inst.PC, c))
-	inst:dump()
+	--print(fmt("0x%04x: %s -> 0x%04x (%i cycles)", pc, n, inst.PC, c))
+	--inst:dump()
 end
