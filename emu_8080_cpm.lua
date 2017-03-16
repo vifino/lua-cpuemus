@@ -26,7 +26,7 @@ local rom_data = f:read("*a")
 local rom = memlib.new("rostring", rom_data:sub(1, 128), memsz)
 f:close()
 
-local mem = memlib.new()"rwoverlay",rom, memsz)
+local mem = memlib.new("rwoverlay",rom, memsz)
 
 -- Address handlers/Peripherals
 --local addr_handlers = {}

@@ -23,7 +23,7 @@ local memlib = require("memlib")
 
 -- Memory: ROM, RAM and peripherals.
 local t = f:read(memsz)
-local rom = memlib.new("rostrring", t, memsz)
+local rom = memlib.new("rostring", t, memsz)
 f:close()
 
 local mem = memlib.new("rwoverlay", rom, memsz)
