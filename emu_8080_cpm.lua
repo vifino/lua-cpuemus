@@ -14,7 +14,7 @@ local memsz = 0x10000
 
 -- Load bitops
 local bitops = loadfile("bitops.lua")(false, true)
--- Load ZPU
+-- Load CPU
 local l8080 = dofile("8080/init.lua")
 -- Install bitops
 l8080.set_bit32(bitops)
@@ -25,6 +25,17 @@ local memlib = require("memlib")
 local rom_data = f:read("*a")
 local rom = memlib.new("rostring", rom_data:sub(1, 128), memsz)
 f:close()
+
+local drive_data = {}
+drive_data[0] = rom_data
+for i = 1, 3 do
+	if arg[i + 1] then
+		local f = io.open(arg[i + 1], "rb")
+		if not f then error("Failed to open drive " .. (i + 1)) end
+		drive_data[i] = f:read("*a")
+		f:close()
+	end
+end
 
 local mem = memlib.new("rwoverlay",rom, memsz)
 
@@ -51,10 +62,11 @@ local function getAbsoluteSectorAddress()
 	return p * 128
 end
 local function getSector()
-	if fdcDrive ~= 0 then return nil, 1 end
+	local dd = drive_data[fdcDrive]
+	if not dd then return nil, 1 end
 	local sp, ns2 = getAbsoluteSectorAddress()
 	if not sp then return nil, ns2 end
-	return rom_data:sub(sp + 1, sp + 128), 0
+	return dd:sub(sp + 1, sp + 128), 0
 end
 local function putSector()
 	error("Not yet.")
@@ -69,9 +81,20 @@ local function dmaInject(buf)
 	end
 end
 
+local consoleIB = nil
 local function iog(inst, i)
 	if i == 0 then return 0xFF end -- Console input ready
-	if i == 1 then return string.byte(io.read(1)) end -- Console data
+	if i == 1 then
+		if consoleIB then
+			local cb = consoleIB
+			consoleIB = nil
+			return cb
+		end
+		-- Console data.
+		local c = io.read(1)
+		if c == "\n" then consoleIB = 10 return 13 end
+		return string.byte(c)
+	end
 
 	if i == 10 then return fdcDrive end
 	if i == 11 then return fdcTrack end
@@ -85,7 +108,12 @@ local function iog(inst, i)
 	return 0
 end
 local function ios(inst, i, v)
-	if i == 1 then io.write(string.char(v)) end
+	if i == 1 then
+		if v == 13 then
+			return
+		end
+		io.write(string.char(v))
+	end
 
 	if i == 10 then fdcDrive = v end
 	if i == 11 then fdcTrack = v end
