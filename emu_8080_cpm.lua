@@ -1,5 +1,5 @@
 #!/usr/bin/env lua
--- 8080 Emulator: Example usage.
+-- 8080 Emulator: CP/M specific example.
 
 local arg = arg or {...}
 
@@ -40,7 +40,6 @@ end
 local mem = memlib.new("rwoverlay",rom, memsz)
 
 -- Address handlers/Peripherals
-
 local function get(inst, i)
 	return mem:get(i)
 end
@@ -79,21 +78,49 @@ local function dmaInject(buf)
 	end
 end
 
--- Fake available/unavailable counter. Dirty hack, but it works.
--- Because we have no way to check if there are actually bytes available,
--- we set it to only be available once every availevery read checks.
-local availevery = 10000 -- fake having a data byte every 10k calls.
-local availn = 1
+local availfn
+if jit then -- LuaJIT alternative check.
+	-- UNIX-only, I believe. Possibly Linux only.
+	-- But hey, who cares?
+	local ffi = require("ffi")
+	ffi.cdef [[
+		struct pollfd {
+			int	 fd;
+			short events;
+			short revents;
+		};
 
-local consoleIB = nil
-local function iog(inst, i)
-	if i == 0 then -- Console input status
-		if availn == (availevery - 1) then -- counter reached
+		int poll(struct pollfd *fds, unsigned long int nfds, int timeout);
+	]]
+	local C = ffi.C
+	local pollfds = ffi.new("struct pollfd[1]")
+	pollfds[0].fd = 0
+	pollfds[0].events = 1
+	availfn = function()
+		local hasdata = C.poll(pollfds, 1, 0) == 1
+		if hasdata then return 0xFF else return 0x00 end
+	end
+else
+	-- Fake available/unavailable counter. Dirty hack, but it works.
+	-- Because we have no way to check if there are actually bytes available,
+	-- we set it to only be available once every availevery read checks.
+	local availevery = 10000 -- fake having a data byte every 10k calls.
+	local availn = 1
+
+	availfn = function()
+		if availn == (availevery - 1) then
 			availn = 1
 			return 0xFF -- available
 		end
 		availn = availn + 1
-		return 0x00 -- fake unavailable
+		return 0x00
+	end
+end
+
+local consoleIB = nil
+local function iog(inst, i)
+	if i == 0 then -- Console input status
+		return availfn()
 	elseif i == 1 then
 		if consoleIB then
 			local cb = consoleIB
@@ -135,11 +162,11 @@ local function ios(inst, i, v)
 			if b then
 				dmaInject(b)
 			else
-				print("Failed Read", fdcDrive, fdcTrack, fdcSector)
+				--print("Failed Read", fdcDrive, fdcTrack, fdcSector)
 			end
 			fdcStatus = ns
 		else
-			print("Failed Write")
+			--print("Failed Write")
 			fdcStatus = 7
 		end
 	elseif i == 15 then dmaLow = v
@@ -148,10 +175,46 @@ end
 
 local inst = l8080.new(get, set, iog, ios)
 
+-- Sleep
+local sleep
+if os.sleep then
+	sleep = os.sleep
+elseif jit then
+	local ffi = require("ffi")
+	ffi.cdef [[
+		void Sleep(int ms);
+		// int poll(struct pollfd *fds, unsigned long nfds, int timeout); // already defined above.
+	]]
+	local C = ffi.C
+	if ffi.os == "Windows" then
+		sleep = function(s)
+			C.Sleep(s*1000)
+		end
+	else
+		sleep = function(s)
+			C.poll(nil, 0, s*1000)
+		end
+	end
+end
+
+-- Clock speed limiting
+local clockspeed = 2 * 1000 * 1000 -- 2MHz
+local sleepdur = 0.05
+
+-- Probably fucked up the math.
+local cps = clockspeed/(1/sleepdur)
+
 local fmt = string.format
-while true do
-	local pc = inst.PC
-	local n, c = inst:run()
-	--print(fmt("0x%04x: %s -> 0x%04x (%i cycles)", pc, n, inst.PC, c))
-	--inst:dump()
+
+if sleep then -- has a sleep function, which allows us to limit execution speed.
+	local i=0
+	while true do
+		i = i + 1
+		if i == cps then sleep(sleepdur) i = 0 end
+		inst:run()
+	end
+else
+	while true do -- Fallback.
+		inst:run()
+	end
 end
