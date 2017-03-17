@@ -40,8 +40,6 @@ end
 local mem = memlib.new("rwoverlay",rom, memsz)
 
 -- Address handlers/Peripherals
---local addr_handlers = {}
---local comp = memlib.compose(mem, addr_handlers)
 
 local function get(inst, i)
 	return mem:get(i)
@@ -81,10 +79,22 @@ local function dmaInject(buf)
 	end
 end
 
+-- Fake available/unavailable counter. Dirty hack, but it works.
+-- Because we have no way to check if there are actually bytes available,
+-- we set it to only be available once every availevery read checks.
+local availevery = 10
+local availn = 1
+
 local consoleIB = nil
 local function iog(inst, i)
-	if i == 0 then return 0xFF end -- Console input ready
-	if i == 1 then
+	if i == 0 then -- Console input status
+		if availn == (availevery - 1) then -- counter reached
+			availn = 1
+			return 0xFF -- available
+		end
+		availn = availn + 1
+		return 0x00 -- fake unavailable		
+	elseif i == 1 then
 		if consoleIB then
 			local cb = consoleIB
 			consoleIB = nil
@@ -94,31 +104,32 @@ local function iog(inst, i)
 		local c = io.read(1)
 		if c == "\n" then consoleIB = 10 return 13 end
 		return string.byte(c)
-	end
+	elseif i == 10 then return fdcDrive
+	elseif i == 11 then return fdcTrack
+	elseif i == 12 then return fdcSector
 
-	if i == 10 then return fdcDrive end
-	if i == 11 then return fdcTrack end
-	if i == 12 then return fdcSector end
+	elseif i == 13 then return 0xFF -- FDC-CMD-COMPLETE
+	elseif i == 14 then return fdcStatus -- FDC-STATUS
 
-	if i == 13 then return 0xFF end -- FDC-CMD-COMPLETE
-	if i == 14 then return fdcStatus end -- FDC-STATUS
-
-	if i == 15 then return dmaLow end
-	if i == 16 then return dmaHigh end
+	elseif i == 15 then return dmaLow
+	elseif i == 16 then return dmaHigh end
 	return 0
 end
+
+local consoleLastCR, consoleLastNL = false, false
 local function ios(inst, i, v)
 	if i == 1 then
-		if v == 13 then
-			return
+		if consoleLastCR and v ~= 10 then -- not \r\n
+			io.write('\r')
 		end
+		consoleLastCR = false
+		if v == 13 then consoleLastCR = true return end -- \r
 		io.write(string.char(v))
-	end
-
-	if i == 10 then fdcDrive = v end
-	if i == 11 then fdcTrack = v end
-	if i == 12 then fdcSector = v end
-	if i == 13 then
+		io.flush()
+	elseif i == 10 then fdcDrive = v
+	elseif i == 11 then fdcTrack = v
+	elseif i == 12 then fdcSector = v
+	elseif i == 13 then
 		if v == 0 then
 			local b, ns = getSector()
 			if b then
@@ -131,9 +142,8 @@ local function ios(inst, i, v)
 			print("Failed Write")
 			fdcStatus = 7
 		end
-	end
-	if i == 15 then dmaLow = v end
-	if i == 16 then dmaHigh = v end
+	elseif i == 15 then dmaLow = v
+	elseif i == 16 then dmaHigh = v end
 end
 
 local inst = l8080.new(get, set, iog, ios)
