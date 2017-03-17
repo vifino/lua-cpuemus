@@ -117,20 +117,11 @@ else
 	end
 end
 
-local consoleIB = nil
 local function iog(inst, i)
 	if i == 0 then -- Console input status
 		return availfn()
 	elseif i == 1 then
-		if consoleIB then
-			local cb = consoleIB
-			consoleIB = nil
-			return cb
-		end
-		-- Console data.
-		local c = io.read(1)
-		if c == "\n" then consoleIB = 10 return 13 end
-		return string.byte(c)
+		return string.byte(io.read(1))
 	elseif i == 10 then return fdcDrive
 	elseif i == 11 then return fdcTrack
 	elseif i == 12 then return fdcSector
@@ -143,14 +134,8 @@ local function iog(inst, i)
 	return 0
 end
 
-local consoleLastCR, consoleLastNL = false, false
 local function ios(inst, i, v)
 	if i == 1 then
-		if consoleLastCR and v ~= 10 then -- not \r\n
-			io.write('\r')
-		end
-		consoleLastCR = false
-		if v == 13 then consoleLastCR = true return end -- \r
 		io.write(string.char(v))
 		io.flush()
 	elseif i == 10 then fdcDrive = v
