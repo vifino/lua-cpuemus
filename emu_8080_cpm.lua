@@ -121,7 +121,10 @@ local function iog(inst, i)
 	if i == 0 then -- Console input status
 		return availfn()
 	elseif i == 1 then
-		return string.byte(io.read(1))
+		-- Console data.
+		local c = io.read(1)
+		if c == "\n" then return 13 end -- CP/M and Zork seem to prefer \r to \n, \r\n or \n\r.
+		return string.byte(c)
 	elseif i == 10 then return fdcDrive
 	elseif i == 11 then return fdcTrack
 	elseif i == 12 then return fdcSector
