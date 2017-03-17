@@ -8,7 +8,7 @@ local _M = {
 
 local bitops = require("bitops")
 local band, bor, blshift, brshift = bitops.band, bitops.bor, bitops.lshift, bitops.rshift
-local strbyte, strsub, strfind = string.byte, string.sub, string.find
+local strbyte, strsub, strfind, strchar = string.byte, string.sub, string.find, string.char
 
 -- Helpers.
 local function and32(v, addr)
@@ -168,10 +168,7 @@ end
 -- 1. The last non-NULL memory index, or -1 if the memory is empty.
 -- 2. The stripped string.
 local function rostr_striptrailingnulls(str)
-	-- The reason for not using \x00 is because LuaJIT doesn't like it.
-	-- At all. It seems to consider it termination of pattern, AFAIK.
-	-- Instead, this ever-so-slightly slower classifier is required.
-	local l2, _ = strfind(str, "[^\x01-\xFF]+$")
+	local l2, _ = strfind(str, "%z+$")
 	if not l2 then return (str:len() - 1), str end
 	return l2 - 2, strsub(str, 1, l2 - 1)
 end
@@ -201,7 +198,7 @@ function _M.backend.rostring(string, memsz)
 	local start_off, end_pos
 	end_pos, string = rostr_striptrailingnulls(string)
 	return {
-		-- Don't go changing any of these.
+		-- Don't go changing any ofthese.
 		str = string,
 		size = size,
 		end_pos = end_pos,
@@ -218,7 +215,10 @@ end
 -- Read/Write overlay for existing memory backend.
 -- Useful for ROM/RAM.
 local function rwovl_read(romem, ovlt, i)
-	return ovlt[i] or romem:get(i)
+	local oval = ovlt[i]
+	if oval then return oval end
+	if romem.size >= i then return romem:get(i) end
+	return 0
 end
 
 local fns_rwovl = {
@@ -268,6 +268,98 @@ function _M.backend.rwoverlay(existing_mem, memsz)
 		set = fns_rwovl.set,
 		get = fns_rwovl.get,
 		size = memsz or existing_mem.size,
+	}
+end
+
+-- Rather simple file backend.
+-- Little fancy, not much.
+local fns_file = {
+	get = function(self, i)
+		if (self.size < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+		local fh = self.fh
+		fh:seek("set", i)
+		return strbyte(fh:read(1))
+	end,
+	get32be = function(self, i)
+		if ((self.size - 3) < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+		local fh = self.fh
+		fh:seek("set", i)
+		local str = fh:read(4)
+		return comb4b_be(strbyte(str, 1), strbyte(str, 2), strbyte(str, 3), strbyte(str, 4))
+	end,
+
+	set = function(self, i, v)
+		if (self.size < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+		local fh = self.fh
+		fh:seek("set", i)
+		fh:write(strchar(v))
+	end,
+	set32be = function(self, i, v)
+		if (self.size < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+		local fh = self.fh
+		fh:seek("set", i)
+		local str = strchar(band(brshift(v, 24), 0xFF)) .. strchar(band(brshift(v, 16), 0xFF)) .. strchar(band(brshift(v, 8), 0xFF)) .. strchar(band(v, 0xFF))
+
+		fh:write(str)
+	end,
+}
+
+local function fh_size(fh)
+	local current = fh:seek()
+	local size = fh:seek("end")
+	fh:seek("set", current)
+	return size
+end
+
+function _M.backend.file(file)
+	local fh = file
+	if type(file) == "string" then
+		fh = assert(io.open(file, "r+b"))
+	end
+
+	local realsize = fh_size(fh)
+
+	return {
+		fh = fh,
+		size = realsize,
+
+		get = fns_file.get,
+		get32be = fns_file.get32be,
+
+		set = fns_file.set,
+		set32be = fns_file.set32be,
+	}
+end
+
+local function rofile_werr()
+	error("rofile memory backend is incapable of writing.")
+end
+
+function _M.backend.rofile(file)
+	local fh = file
+	if type(file) == "string" then
+		fh = assert(io.open(file, "rb"))
+	end
+
+	local realsize = fh_size(fh)
+
+	return {
+		fh = fh,
+		size = realsize,
+
+		get = fns_file.get,
+		get32be = fns_file.get32be,
+
+		set = rofile_werr,
+		set32be = rofile_werr,
 	}
 end
 

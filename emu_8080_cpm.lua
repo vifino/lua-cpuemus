@@ -82,7 +82,7 @@ end
 -- Fake available/unavailable counter. Dirty hack, but it works.
 -- Because we have no way to check if there are actually bytes available,
 -- we set it to only be available once every availevery read checks.
-local availevery = 10
+local availevery = 10000 -- fake having a data byte every 10k calls.
 local availn = 1
 
 local consoleIB = nil
@@ -93,7 +93,7 @@ local function iog(inst, i)
 			return 0xFF -- available
 		end
 		availn = availn + 1
-		return 0x00 -- fake unavailable		
+		return 0x00 -- fake unavailable
 	elseif i == 1 then
 		if consoleIB then
 			local cb = consoleIB
