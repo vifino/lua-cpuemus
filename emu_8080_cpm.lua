@@ -97,7 +97,7 @@ if jit then -- LuaJIT alternative check.
 	pollfds[0].fd = 0
 	pollfds[0].events = 1
 	availfn = function()
-		local hasdata = C.poll(pollfds, 1, 0) == 1
+		local hasdata = C.poll(pollfds, 1, 1) == 1
 		if hasdata then return 0xFF else return 0x00 end
 	end
 else
