@@ -55,6 +55,11 @@ local function set_set32(memory, i, v)
 	memory:set32(i, comb4b_be(v, b, c, d))
 end
 
+function strreplace(str, pos, r)
+	local n = #r
+	return strsub(str, 1, pos-n) .. r .. strsub(str, pos+n)
+end
+
 -- Public Helpers
 function _M.new(driver, ...)
 	local drv = _M.backend[driver]
@@ -65,16 +70,15 @@ function _M.new(driver, ...)
 end
 
 function _M.copy(mem1, mem2)
-	for i=0, mem1.size, 4 do
-		local v = mem1:get32be(i)
-		mem2:set32be(i, v)
+	for i=0, mem1.size do
+		mem2:set(i, mem1:get(i))
 	end
 end
 
 function _M.copyto(memsrc, addroff, memdst)
-	for i=0, memsrc.size, 4 do
-		local v = memsrc:get32be(i)
-		memdst:set32be(addroff + i, v)
+	for i=0, memsrc.size do
+		local v = memsrc:get(i)
+		memdst:set(addroff + i, v)
 	end
 end
 
@@ -271,44 +275,96 @@ function _M.backend.rwoverlay(existing_mem, memsz)
 	}
 end
 
--- Rather simple file backend.
+-- Rather simple cached file backend.
 -- Little fancy, not much.
+-- Warning: May not write back data unless one reads data after it.
+
+local function file_getcached(s, i, n)
+	local blksz = s.blksz
+	local ind = i % blksz
+	local iblk = i - ind
+	local cblk = s.cblk
+	local cached = s.cached
+	local fh = s.fh
+
+	if s.didmod then
+		fh:seek("set", cblk)
+		fh:write(cached)
+		fh:flush()
+		s.didmod = false
+	end
+
+	if cblk == iblk then -- current page is the cached one
+		if not cached then
+			fh:seek("set", iblk)
+			cached = fh:read(blksz)
+			s.cached = cached
+		end
+	else -- current cache is for another block.
+		fh:seek("set", iblk)
+		cached = fh:read(blksz)
+		s.cached = cached
+		s.cblk = iblk
+	end
+	return strbyte(cached, ind+1)
+end
+
+local function file_setcached(s, i, v)
+	local blksz = s.blksz
+	local ind = i % blksz
+	local iblk = i - ind
+	local cblk = s.cblk
+	local cached = s.cached
+	local fh = s.fh
+	if cblk == iblk then -- current page is the cached one
+		fh:seek("set", iblk)
+		if not cached then
+			cached = fh:read(blksz)
+			s.cached = cached
+		end
+	else -- current cache is for another block.
+		if s.didmod then
+			fh:seek("set", cblk)
+			fh:write(cached)
+			fh:flush()
+			s.didmod = false
+		end
+		fh:seek("set", iblk)
+		cached = fh:read(blksz)
+		s.cached = cached
+		s.cblk = iblk
+	end
+	s.didmod = true
+	s.cached = strreplace(s.cached, ind+1, v)
+end
+
 local fns_file = {
 	get = function(self, i)
 		if (self.size < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-		local fh = self.fh
-		fh:seek("set", i)
-		return strbyte(fh:read(1))
+		return file_getcached(self, i)
 	end,
 	get32be = function(self, i)
 		if ((self.size - 3) < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-		local fh = self.fh
-		fh:seek("set", i)
-		local str = fh:read(4)
-		return comb4b_be(strbyte(str, 1), strbyte(str, 2), strbyte(str, 3), strbyte(str, 4))
+		return comb4b_be(file_getcached(self, i), file_getcached(self, i+1), file_getcached(self, i+2), file_getcached(self, i+3))
 	end,
 
 	set = function(self, i, v)
 		if (self.size < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-		local fh = self.fh
-		fh:seek("set", i)
-		fh:write(strchar(v))
+		file_setcached(self, i, v)
 	end,
 	set32be = function(self, i, v)
 		if (self.size < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-		local fh = self.fh
-		fh:seek("set", i)
 		local str = strchar(band(brshift(v, 24), 0xFF)) .. strchar(band(brshift(v, 16), 0xFF)) .. strchar(band(brshift(v, 8), 0xFF)) .. strchar(band(v, 0xFF))
 
-		fh:write(str)
+		fh_setcached(self, i, str)
 	end,
 }
 
@@ -330,6 +386,10 @@ function _M.backend.file(file)
 	return {
 		fh = fh,
 		size = realsize,
+		blksz = blksz or 128,
+		cblk = 0,
+		cached = nil,
+		didmod = false,
 
 		get = fns_file.get,
 		get32be = fns_file.get32be,
@@ -343,7 +403,7 @@ local function rofile_werr()
 	error("rofile memory backend is incapable of writing.")
 end
 
-function _M.backend.rofile(file)
+function _M.backend.rofile(file, blksz)
 	local fh = file
 	if type(file) == "string" then
 		fh = assert(io.open(file, "rb"))
@@ -354,6 +414,11 @@ function _M.backend.rofile(file)
 	return {
 		fh = fh,
 		size = realsize,
+		blksz = blksz or 128,
+		cblk = 0,
+		cached = nil,
+		didmod = false,
+		
 
 		get = fns_file.get,
 		get32be = fns_file.get32be,

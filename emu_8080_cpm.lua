@@ -22,19 +22,21 @@ l8080.set_bit32(bitops)
 local memlib = require("memlib")
 
 -- Memory: ROM, RAM and peripherals.
-local rom_data = f:read("*a")
-local rom = memlib.new("rostring", rom_data:sub(1, 128), memsz)
+local rom_data = f:read(128)
 f:close()
 
+local mem = memlib.new("table", memsz)
+for i=1, 128 do
+	mem:set(i-1, rom_data:byte(i))
+end
+
 local drive_data = {}
-drive_data[0] = memlib.new("rostring", rom_data)
+drive_data[0] = memlib.new("rofile", fname)
 for i = 1, 3 do
 	if arg[i + 1] then
 		drive_data[i] = memlib.new("rofile", arg[i + 1])
 	end
 end
-
-local mem = memlib.new("rwoverlay",rom, memsz)
 
 -- Address handlers/Peripherals
 local function get(inst, i)
