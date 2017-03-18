@@ -27,13 +27,10 @@ local rom = memlib.new("rostring", rom_data:sub(1, 128), memsz)
 f:close()
 
 local drive_data = {}
-drive_data[0] = rom_data
+drive_data[0] = memlib.new("rostring", rom_data)
 for i = 1, 3 do
 	if arg[i + 1] then
-		local f = io.open(arg[i + 1], "rb")
-		if not f then error("Failed to open drive " .. (i + 1)) end
-		drive_data[i] = f:read("*a")
-		f:close()
+		drive_data[i] = memlib.new("rofile", arg[i + 1])
 	end
 end
 
@@ -58,12 +55,23 @@ local function getAbsoluteSectorAddress()
 	local p = (fdcTrack * 26) + (fdcSector - 1)
 	return p * 128
 end
+
+function membatch_read(mem, addr, n)
+	local t = {}
+	addr = addr - 1
+	for i=1, n do
+		t[i] = mem:get(addr+i)
+	end
+	t.n = n
+	return t
+end
+
 local function getSector()
 	local dd = drive_data[fdcDrive]
 	if not dd then return nil, 1 end
 	local sp, ns2 = getAbsoluteSectorAddress()
 	if not sp then return nil, ns2 end
-	return dd:sub(sp + 1, sp + 128), 0
+	return membatch_read(dd, sp, 128), 0
 end
 local function putSector()
 	error("Not yet.")
@@ -71,9 +79,9 @@ end
 
 local function dmaInject(buf)
 	local target = dmaLow + (dmaHigh * 256)
-	--print(string.format("%04x\n", target))
-	for i = 1, buf:len() do
-		mem:set(target, buf:byte(i))
+	--print(string.format("DMA: %04x %i: %x %x %x %x", target, #buf, buf[1], buf[2], buf[3], buf[4]))
+	for i = 1, (buf.n or #buf)  do
+		mem:set(target, buf[i])
 		target = target + 1
 	end
 end
