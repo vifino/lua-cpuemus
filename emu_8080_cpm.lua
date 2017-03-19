@@ -31,10 +31,10 @@ for i=1, 128 do
 end
 
 local drive_data = {}
-drive_data[0] = memlib.new("rofile", fname)
+drive_data[0] = memlib.new("file", fname)
 for i = 1, 3 do
 	if arg[i + 1] then
-		drive_data[i] = memlib.new("rofile", arg[i + 1])
+		drive_data[i] = memlib.new("file", arg[i + 1])
 	end
 end
 
@@ -50,7 +50,7 @@ local fdcDrive, fdcTrack, fdcSector = 0, 0, 1
 local fdcStatus = 1
 local dmaHigh, dmaLow = 0, 0
 
-local function getAbsoluteSectorAddress()
+local function get_absolute_sector_address()
 	--print(fdcTrack, fdcSector)
 	if fdcSector < 1 then return nil, 3 end
 	if fdcSector > 26 then return nil, 3 end
@@ -68,24 +68,47 @@ function membatch_read(mem, addr, n)
 	return t
 end
 
-local function getSector()
+function membatch_write(mem, addr, data)
+	addr = addr - 1
+	for i=1, (data.n or #data) do
+		mem:set(addr+i, data[i])
+	end
+	return true
+end
+
+local function get_sector()
 	local dd = drive_data[fdcDrive]
 	if not dd then return nil, 1 end
-	local sp, ns2 = getAbsoluteSectorAddress()
+	local sp, ns2 = get_absolute_sector_address()
 	if not sp then return nil, ns2 end
 	return membatch_read(dd, sp, 128), 0
 end
-local function putSector()
-	error("Not yet.")
+local function put_sector(data)
+	local dd = drive_data[fdcDrive]
+	if not dd then return 1 end
+	local sp, ns2 = get_absolute_sector_address()
+	if not sp then return ns2 end
+	membatch_write(dd, sp, data)
+	return 0
 end
 
-local function dmaInject(buf)
+local function dma_write(buf)
 	local target = dmaLow + (dmaHigh * 256)
 	--print(string.format("DMA: %04x %i: %x %x %x %x", target, #buf, buf[1], buf[2], buf[3], buf[4]))
 	for i = 1, (buf.n or #buf)  do
 		mem:set(target, buf[i])
 		target = target + 1
 	end
+end
+
+local function dma_read(len)
+	local target = dmaLow + (dmaHigh * 256) - 1
+	--print(string.format("DMA: %04x %i: %x %x %x %x", target, #buf, buf[1], buf[2], buf[3], buf[4]))
+	local tmp = {n = len}
+	for i = 1, len  do
+		tmp[i] = mem:get(target + i)
+	end
+	return tmp
 end
 
 local availfn
@@ -156,15 +179,22 @@ local function ios(inst, i, v)
 	elseif i == 12 then fdcSector = v
 	elseif i == 13 then
 		if v == 0 then
-			local b, ns = getSector()
+			local b, ns = get_sector()
 			if b then
-				dmaInject(b)
-			else
+				dma_write(b)
+			--else
 				--print("Failed Read", fdcDrive, fdcTrack, fdcSector)
 			end
 			fdcStatus = ns
+		elseif v == 1 then
+			local s, ns = pcall(put_sector, dma_read(128))
+			if not s then
+				--io.stderr:write("ERR: "..tostring(ns).."\n")
+				fdcStatus = 6
+			else
+				fdcStatus = ns
+			end
 		else
-			--print("Failed Write")
 			fdcStatus = 7
 		end
 	elseif i == 15 then dmaLow = v

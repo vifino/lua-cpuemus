@@ -335,7 +335,7 @@ local function file_setcached(s, i, v)
 		s.cblk = iblk
 	end
 	s.didmod = true
-	s.cached = strreplace(s.cached, ind+1, v)
+	s.cached = strreplace(s.cached, ind+1, strchar(v))
 end
 
 local fns_file = {
