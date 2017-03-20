@@ -130,6 +130,12 @@ local function s_call(s, t)
 	s.PC = t
 end
 
+-- PSW Accumulator is in the 'big' byte.
+-- (First when pushing, last when popping)
+-- 0739: POP BC
+-- 073A: MOV C, B
+-- 073B: ORA C
+
 local function encode_psw(s)
 	-- SZ0A0P1C
 	local n = 2
@@ -200,7 +206,7 @@ local ops = {
 	[0x24] = function(s) s.H = flaghandle(s, s.H + 1) end, -- INR H
 	[0x25] = function(s) s.H = flaghandle(s, s.H - 1) end, -- DCR H
 	[0x26] = function(s, b) s.H = b end, -- MVI H,D8
-	[0x27] = function(s) if band(s.A, 0x0F) > 9 or s.ac then s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then local na, ncy = addcdn(s.A, 0x60) s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
+	[0x27] = function(s) error("NOPE")if band(s.A, 0x0F) > 9 or s.ac then s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then local na, ncy = addcdn(s.A, 0x60) s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
 	[0x28] = function(s)  end, -- NOP
 	[0x29] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.H, s.L)) end, -- DAD H
 	[0x2a] = function(s, b2, b3) local addr = pair(b3, b2) s.L = s:getb(addr) s.H = s:getb(band(addr + 1, 0xFFFF)) end, -- LHLD adr
@@ -402,11 +408,11 @@ local ops = {
 	[0xee] = function(s, b) s.A = flaghandle(s, bxor(s.A, b)) s.cy = false end, -- XRI D8
 	[0xef] = function(s) s_call(s, 0x28) return true end, -- RST 5
 	[0xf0] = function(s) if s.s == false then s.PC = s_pop16(s) return true end end, -- RET !FS
-	[0xf1] = function(s) s.A = s_pop8(s) decode_psw(s, s_pop8(s)) end, -- POP PSW
+	[0xf1] = function(s) decode_psw(s, s_pop8(s)) s.A = s_pop8(s) end, -- POP PSW
 	[0xf2] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == false then s.PC = addr return true end end, -- JMP !FS adr
 	[0xf3] = function(s) s.int_enable = false end, -- DI
 	[0xf4] = function(s, b2, b3) local addr = pair(b3, b2) if s.s == false then s_call(s, addr) return true end end, -- CALL !FS adr
-	[0xf5] = function(s) s_push8(s, encode_psw(s)) s_push8(s, s.A) end, -- PUSH PSW
+	[0xf5] = function(s) s_push8(s, s.A) s_push8(s, encode_psw(s)) end, -- PUSH PSW
 	[0xf6] = function(s, b) s.A = flaghandle(s, bor(s.A, b)) s.cy = false end, -- ORI D8
 	[0xf7] = function(s) s_call(s, 0x30) return true end, -- RST 6
 	[0xf8] = function(s) if s.s == true then s.PC = s_pop16(s) return true end end, -- RET FS

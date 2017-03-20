@@ -138,6 +138,12 @@ local function s_call(s, t)
 	s.PC = t
 end
 
+-- PSW Accumulator is in the 'big' byte.
+-- (First when pushing, last when popping)
+-- 0739: POP BC
+-- 073A: MOV C, B
+-- 073B: ORA C
+
 local function encode_psw(s)
 	-- SZ0A0P1C
 	local n = 2

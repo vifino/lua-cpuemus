@@ -31,6 +31,7 @@ return {
 	["SPHL"] = "s.SP = pair(s.H, s.L)",
 
 	["DAA"] =
+		"error(\"NOPE\")" .. 
 		"if band(s.A, 0x0F) > 9 or s.ac then" ..
 		" s.A, s.ac = addcda(s.A, 6) " ..
 		"else s.ac = false end " ..
@@ -122,8 +123,9 @@ return {
 	["PUSH R"] = "s_push8(s, s.R) s_push8(s, s.P)",
 	["POP R"] = "s.P = s_pop8(s) s.R = s_pop8(s)",
 
-	["PUSH PSW"] = "s_push8(s, encode_psw(s)) s_push8(s, s.A)",
-	["POP PSW"] = "s.A = s_pop8(s) decode_psw(s, s_pop8(s))",
+	-- See comment on encode_psw for the specific order and reasoning
+	["PUSH PSW"] = "s_push8(s, s.A) s_push8(s, encode_psw(s))",
+	["POP PSW"] = "decode_psw(s, s_pop8(s)) s.A = s_pop8(s)",
 
 	-- Exchangers
 	["XCHG"] = "local oh, ol = s.H, s.L s.H = s.D s.D = oh s.L = s.E s.E = ol",

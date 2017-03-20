@@ -1,6 +1,13 @@
 #!/usr/bin/env lua
 -- 8080 Emulator: CP/M specific example.
 
+-- Optional debug stuff.
+local debugf
+-- debugf = io.open("debug", "w")
+local debug = function (s)
+	if debugf then debugf:write(s .. "\n") end
+end
+
 local arg = arg or {...}
 
 local fname = arg[1]
@@ -172,6 +179,7 @@ end
 
 local function ios(inst, i, v)
 	if i == 1 then
+		debug("WR: " .. string.char(v))
 		io.write(string.char(v))
 		io.flush()
 	elseif i == 10 then fdcDrive = v
@@ -239,10 +247,24 @@ if sleep then -- has a sleep function, which allows us to limit execution speed.
 	while true do
 		i = i + 1
 		if i == cps then sleep(sleepdur) i = 0 end
+		if debugf then
+			local n2, txt = inst:disasm(inst.PC)
+			debug(txt)
+		end
 		inst:run()
+		if debugf then
+			inst:dump(debugf)
+		end
 	end
 else
 	while true do -- Fallback.
+		if debugf then
+			local n2, txt = inst:disasm(inst.PC)
+			debug(txt)
+		end
 		inst:run()
+		if debugf then
+			inst:dump(debugf)
+		end
 	end
 end
