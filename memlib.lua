@@ -168,8 +168,8 @@ end
 -- 2. The stripped string.
 local function rostr_striptrailingnulls(str)
 	local l2, _ = strfind(str, "%z+$")
-	if not l2 then return (str:len() - 1), str end
-	return l2 - 2, strsub(str, 1, l2 - 1)
+	if not l2 then return str end
+	return strsub(str, 1, l2 - 1)
 end
 
 local fns_rostring = {
