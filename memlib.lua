@@ -158,11 +158,6 @@ end
 
 -- Simple read-only string backend.
 -- Incapable of writing, but efficient for readonly operation!
-local function rostr_get(memory, i)
-	if (i > memory.end_pos) then return 0 end
-	-- Only do string index compensation at the last possible moment.
-	return strbyte(memory.str, i + 1)
-end
 
 local function rostr_werr()
 	error("rostring memory backend is incapable of writing.")
@@ -182,30 +177,25 @@ local fns_rostring = {
 		if (memory.size < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-		return rostr_get(memory, i)
+		return strbyte(memory.str, i + 1) or 0
 	end,
 	get32be = function(memory, i)
 		if ((memory.size - 3) < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
 
-		local a = rostr_get(memory, i)
-		local b = rostr_get(memory, and32(i + 1))
-		local c = rostr_get(memory, and32(i + 2))
-		local d = rostr_get(memory, and32(i + 3))
-		return comb4b_be(a, b, c, d)
+		local a, b, c, d = strbyte(memory.str, i + 1, i + 4)
+		return comb4b_be(a or 0, b or 0, c or 0, d or 0)
 	end,
 }
 
 function _M.backend.rostring(string, memsz)
 	local size = memsz or #string
-	local start_off, end_pos
-	end_pos, string = rostr_striptrailingnulls(string)
+	string = rostr_striptrailingnulls(string)
 	return {
 		-- Don't go changing any ofthese.
 		str = string,
 		size = size,
-		end_pos = end_pos,
 
 		get = fns_rostring.get,
 		get32be = fns_rostring.get32be,
@@ -362,9 +352,7 @@ local fns_file = {
 		if (self.size < i) or (0 > i) then
 			error("Bad Access (" .. string.format("%08x", i) .. ")")
 		end
-		local str = strchar(band(brshift(v, 24), 0xFF)) .. strchar(band(brshift(v, 16), 0xFF)) .. strchar(band(brshift(v, 8), 0xFF)) .. strchar(band(v, 0xFF))
-
-		fh_setcached(self, i, str)
+		fh_setcached(self, i, strchar(band(brshift(v, 24), 0xFF), band(brshift(v, 16), 0xFF), band(brshift(v, 8), 0xFF), band(v, 0xFF)))
 	end,
 }
 
@@ -375,7 +363,7 @@ local function fh_size(fh)
 	return size
 end
 
-function _M.backend.file(file)
+function _M.backend.file(file, blksz)
 	local fh = file
 	if type(file) == "string" then
 		fh = assert(io.open(file, "r+b"))
