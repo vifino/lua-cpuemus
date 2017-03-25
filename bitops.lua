@@ -2,8 +2,8 @@
 -- since the available bitops vary, we need to pick a working one.
 
 -- This library tries it's hardest to get a proper bit32 compatible library going.
--- It tries the real bit32, wraps luajit's bit to be safe, uses Lua 5.2 operators
--- and if all before fail, it'll use pure lua fallbacks.
+-- It tries the real bit32, wraps luajit's bit to be safe, uses Lua 5.3 operators
+-- and if all before fail, it'll use pure lua fallbacks. slow, but working.
 
 --[[
 	The MIT License (MIT)
@@ -55,7 +55,7 @@ end
 
 local loadstring = loadstring or load
 
-local function bit_l52(op, single)
+local function bit_l53(op, single)
 	if not single then
 		return loadstring("return function(a, b) return a "..op.." b end end")
 	end
@@ -274,12 +274,12 @@ local bit32 = get_bit32()
 local ljbit = bit and fixupall_signed(bit) or {}
 
 bitlib = bit_select({
-	[{'bnot', 0xFFFFFFFA}] = {bit_l52('~', true), bit32.bnot, ljbit.bnot, fallback.bnot},
-	[{'band', 4}] = {bit_l52('&'), bit32.band, ljbit.band, fallback.band},
-	[{'bor', 5}] = {bit_l52('|'), bit32.bor, ljbit.bor, fallback.bor},
-	[{'bxor', 1}] = {bit_l52('~'), bit32.bxor, ljbit.bxor, fallback.bxor},
-	[{'lshift', 80, fixup_lshift}] = {bit_l52('<<'), bit32.lshift, ljbit.lshift, fallback.lshift},
-	[{'rshift', 0, fixup_rshift}] = {bit_l52('>>'), bit32.rshift, ljbit.rshift, fallback.rshift},
+	[{'bnot', 0xFFFFFFFA}] = {bit_l53('~', true), bit32.bnot, ljbit.bnot, fallback.bnot},
+	[{'band', 4}] = {bit_l53('&'), bit32.band, ljbit.band, fallback.band},
+	[{'bor', 5}] = {bit_l53('|'), bit32.bor, ljbit.bor, fallback.bor},
+	[{'bxor', 1}] = {bit_l53('~'), bit32.bxor, ljbit.bxor, fallback.bxor},
+	[{'lshift', 80, fixup_lshift}] = {bit_l53('<<'), bit32.lshift, ljbit.lshift, fallback.lshift},
+	[{'rshift', 0, fixup_rshift}] = {bit_l53('>>'), bit32.rshift, ljbit.rshift, fallback.rshift},
 	[{'arshift', 0}] = {bit32.arshift, ljbit.arshift, fallback.arshift},
 })
 
