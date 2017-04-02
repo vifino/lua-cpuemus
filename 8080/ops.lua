@@ -206,7 +206,7 @@ local ops = {
 	[0x24] = function(s) s.H = flaghandle(s, s.H + 1) end, -- INR H
 	[0x25] = function(s) s.H = flaghandle(s, s.H - 1) end, -- DCR H
 	[0x26] = function(s, b) s.H = b end, -- MVI H,D8
-	[0x27] = function(s) error("NOPE")if band(s.A, 0x0F) > 9 or s.ac then s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then local na, ncy = addcdn(s.A, 0x60) s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
+	[0x27] = function(s) if band(s.A, 0x0F) > 9 or s.ac then s.A, s.ac = addcda(s.A, 6) else s.ac = false end if band(s.A, 0xF0) > 0x90 or s.cy then local na, ncy = addcdn(s.A, 0x60) s.A = na s.cy = s.cy or ncy end s.A = flaghandle(s, s.A) end, -- DAA
 	[0x28] = function(s)  end, -- NOP
 	[0x29] = function(s) spair(s, 'H', 'L', pair(s.H, s.L) + pair(s.H, s.L)) end, -- DAD H
 	[0x2a] = function(s, b2, b3) local addr = pair(b3, b2) s.L = s:getb(addr) s.H = s:getb(band(addr + 1, 0xFFFF)) end, -- LHLD adr

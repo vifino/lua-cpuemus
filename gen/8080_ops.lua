@@ -31,7 +31,6 @@ return {
 	["SPHL"] = "s.SP = pair(s.H, s.L)",
 
 	["DAA"] =
-		"error(\"NOPE\")" .. 
 		"if band(s.A, 0x0F) > 9 or s.ac then" ..
 		" s.A, s.ac = addcda(s.A, 6) " ..
 		"else s.ac = false end " ..
