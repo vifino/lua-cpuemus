@@ -13,13 +13,13 @@ if err then error(err) end
 local memsz = 0x80000
 
 -- Load bitops
-local bitops = loadfile("bitops.lua")(false, true)
+local bitops = require("bitops")
 -- Load ZPU
-local zpu = dofile("zpu.lua")
+local zpu = require("zpu")
 -- Install bitops
 zpu.set_bit32(bitops)
 -- Load ZPU emulates and apply them
-local zpu_emulates = dofile("zpu_emus.lua")
+local zpu_emulates = require("zpu_emus")
 zpu:apply(zpu_emulates)
 
 local memlib = require("memlib")

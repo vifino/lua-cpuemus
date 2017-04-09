@@ -11,9 +11,9 @@ local f, err = io.open(fname, "rb")
 if err then error(err) end
 
 -- Load bitops
-local bitops = loadfile("bitops.lua")(false, true)
+local bitops = require("bitops")
 -- Load 8080
-local l8080 = dofile("8080/init.lua")
+local l8080 = require("8080")
 -- Install bitops
 l8080.set_bit32(bitops)
 

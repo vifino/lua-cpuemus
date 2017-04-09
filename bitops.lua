@@ -32,7 +32,7 @@
 local bitlib
 
 -- args and debug
-local force_fallback, enable_debug = ...
+local enable_debug, force_fallback = ...
 local debug
 if enable_debug then
 	debug = function(msg) io.stderr:write(msg.."\n") end

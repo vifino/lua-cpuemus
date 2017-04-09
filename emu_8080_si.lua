@@ -14,9 +14,9 @@ if err then error(err) end
 local memsz = 0x4000
 
 -- Load bitops
-local bitops = loadfile("bitops.lua")(false, true)
+local bitops = require("bitops")
 
-local l8080 = dofile("8080/init.lua")
+local l8080 = require("8080")
 -- Install bitops
 l8080.set_bit32(bitops)
 
