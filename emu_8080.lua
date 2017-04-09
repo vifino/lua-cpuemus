@@ -14,7 +14,7 @@ local memsz = 0x10000
 
 -- Load bitops
 local bitops = require("bitops")
--- Load ZPU
+-- Load 8080 CPU
 local l8080 = require("8080")
 -- Install bitops
 l8080.set_bit32(bitops)
