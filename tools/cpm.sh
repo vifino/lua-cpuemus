@@ -1,4 +1,4 @@
 #!/bin/sh
-stty -echo -icanon
+stty raw -echo
 luajit emu_8080_cpm.lua "$@"
-stty echo icanon
+stty cooked sane
