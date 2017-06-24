@@ -29,7 +29,7 @@ local t = f:read(memsz)
 local rom = memlib.new("rostring", t)
 f:close()
 
-local mem = memlib.new("rwoverlay", rom, memsz)
+local mem = memlib.new("rwoverlay32", rom, memsz)
 
 -- Address handlers/Peripherals
 local addr_handlers = {}

@@ -265,6 +265,49 @@ function _M.backend.rwoverlay(existing_mem, memsz)
 	}
 end
 
+-- Read/Write overlay for existing memory backend. 32bit read version.
+-- Useful for ROM/RAM.
+local function rwovl_read32be(romem, ovlt, i)
+
+end
+
+local fns_rwovl32 = {
+	get32be = function(memory, i)
+		if ((memory.size - 3) < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+
+    local romem = memory.romem
+	  local oval = memory[i / 4]
+	  if oval then return oval end
+	  if romem.size >= i then return romem:get32be(i) end
+	  return 0
+	end,
+	set32be = function(memory, i, v)
+		if ((memory.size - 3) < i) or (0 > i) then
+			error("Bad Access (" .. string.format("%08x", i) .. ")")
+		end
+
+		memory[i / 4] = v
+	end,
+
+  errorout = function()
+    error("memlib: rwoverlay32 doesn't support byte accesses.")
+  end
+}
+
+function _M.backend.rwoverlay32(existing_mem, memsz)
+	return {
+		-- Don't go changing any of these.
+		romem = existing_mem,
+		get32be = fns_rwovl32.get32be,
+		set32be = fns_rwovl32.set32be,
+		set = fns_rwovl32.errorout,
+		get = fns_rwovl32.errorout,
+		size = memsz or existing_mem.size,
+	}
+end
+
 -- Rather simple cached file backend.
 -- Little fancy, not much.
 -- Warning: May not write back data unless one reads data after it.
@@ -406,7 +449,7 @@ function _M.backend.rofile(file, blksz)
 		cblk = 0,
 		cached = nil,
 		didmod = false,
-		
+
 
 		get = fns_file.get,
 		get32be = fns_file.get32be,

@@ -229,10 +229,12 @@ function zpu.run_trace(self, fh, tracestack)
 	fh:flush()
 	local cSP = self.rSP
 	for i=1, tracestack do
-		fh:write(string.format("/%x", self:get32(cSP)))
+		local success, val = pcall(self.get32, self, cSP)
+		val = success and val or 0
+		fh:write(string.format("/%x", val))
 		cSP = cSP + 4
 	end
-	fh:write(") :")
+	fh:write(") ("..string.format("%x", self:get32(self.rIP)).."): ")
 	local op, opb = self:run()
 	if op == nil then
 		fh:write("UNKNOWN\n")
