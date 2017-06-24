@@ -267,9 +267,6 @@ end
 
 -- Read/Write overlay for existing memory backend. 32bit read version.
 -- Useful for ROM/RAM.
-local function rwovl_read32be(romem, ovlt, i)
-
-end
 
 local fns_rwovl32 = {
 	get32be = function(memory, i)
