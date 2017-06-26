@@ -255,7 +255,7 @@ function zpu.new(memget32, memset32)
 
 	zpu_instance.rSP = 0
 	zpu_instance.rIP = 0
-	zpu.fLastIM = false
+	zpu_instance.fLastIM = false
 
 	return zpu_instance
 end
