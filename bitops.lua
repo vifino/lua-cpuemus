@@ -87,9 +87,6 @@ local function bit_select(inst_tests)
 		if not tmp then
 			error("bitops: No working candidate for "..name)
 		end
-		if unifixer then
-			tmp = unifixer(lib, name, tmp)
-		end
 		if fixup then
 			tmp = fixup(tmp)
 		end
@@ -106,19 +103,7 @@ local function checkint32(x)
 	return mfloor(x) % 0x100000000
 end
 
-local function checkshift(s)
-	if (s < 0) then error("bad shift") end
-	return mmin(32, s)
-end
-
 local function fallback_bitconv(na, nb, f)
-	-- Fixup negative values before beginning, just in case
-	while na < 0 do
-		na = na + 0x100000000
-	end
-	while nb < 0 do
-		nb = nb + 0x100000000
-	end
 	na = checkint32(na)
 	nb = checkint32(nb)
 	local r = 0
@@ -180,22 +165,27 @@ end
 
 -- lshift
 function fallback.lshift(v, s)
-	if (v < 0) or (s < 0) then error("bad shift") end
+	v = checkint32(v)
+	if s < 0 then return fallback.rshift(v, -s) end
 	if s > 31 then return 0 end
 	return mfloor(checkint32(v) * 2^s) % 0x100000000
 end
 
 -- rshift
 function fallback.rshift(v, s)
-	if (v < 0) or (s < 0) then error("bad shift") end
+	v = checkint32(v)
+	if s < 0 then return fallback.lshift(v, -s) end
+	if s > 31 then return 0 end
 	return mfloor(checkint32(v) / 2^s) % 0x100000000
 end
 
 -- arshift
 function fallback.arshift(v, s)
-	if s > 31 then return 0xFFFFFFFF end -- I /think/ that's correct.
 	v = checkint32(v)
-	if s <= 0 then return (x * 2^(-s)) % 0x100000000 end
+	if s > 31 then
+		return ((v >= 0x80000000) and 0xFFFFFFFF) or 0
+	end
+	if s <= 0 then return mfloor(v * 2^(-s)) % 0x100000000 end
 	if v < 0x80000000 then return mfloor(v / 2^s) % 0x100000000 end
 	return mfloor(v / 2^s) + (0x100000000 - 2^(32 - s))
 end
@@ -207,16 +197,10 @@ if force_fallback == true then
 end
 
 -- Fixups!
-local function fix_negval(i)
-	if not i then return nil end
-	while i < 0 do
-		i = i + 0x100000000
-	end
-	return i
-end
 local function fix_negvalwrap(f)
 	return function(a, b)
-		return fix_negval(f(fix_negval(a), fix_negval(b)))
+		-- These functions are still accepting of unsigned values, and we don't want to break shifters
+		return f(a, b) % 0x100000000
 	end
 end
 
@@ -233,40 +217,69 @@ local function fixupall_signed(bl)
 end
 
 local function fixup_lshift(lshift)
-	local nlshift = lshift
 	if lshift(0x80000000, 1) == 0x100000000 then
 		debug("bitops: lshift can return <32 bits, applied workaround.")
-		nlshift = function(v, s)
-			return checkint32(lshift(v, s))
+		local o = lshift
+		lshift = function(v, s)
+			return checkint32(o(v, s))
 		end
 	end
 	if lshift(1, 32) == 1 then
 		debug("bitops: lshift wraps at 32, patched.")
-		return function(v, s)
+		local o = lshift
+		lshift = function(v, s)
 			if s > 31 then return 0 end
-			return nlshift(v, s)
+			return o(v, s)
 		end
 	end
-	return nlshift
+	if lshift(2, -1) ~= 1 then
+		debug("bitops: lshift can't handle negative shifts, patched.")
+		local o = lshift
+		lshift = function(v, s)
+			if s < 0 then return bitlib.rshift(v, -s) end
+			return o(v, s)
+		end
+	end
+	return lshift
 end
 
 local function fixup_rshift(rshift)
-	local nrshift = rshift
 	if rshift(1, 32) == 1 then
 		debug("bitops: rshift wraps at 32, patched.")
-		nrshift = function(v, s)
+		local o = rshift
+		rshift = function(v, s)
 			if s > 31 then return 0 end
-			return rshift(v, s)
+			return o(v, s)
 		end
 	end
-	if rshift(0x80000000, 24) ~= 128 then
-		debug("bitops: rshift was arithmetic, this is really bad. Still, this is known now - Speed gains can still be gotten.")
-		local band = bitlib.band
-		return function(v, s)
-			return band(nrshift(v, s), nrshift(0xFFFFFFFF, s))
+	if rshift(1, -1) ~= 2 then
+		debug("bitops: rshift can't handle negative shifts, patched.")
+		local o = rshift
+		rshift = function(v, s)
+			if s < 0 then return bitlib.lshift(v, -s) end
+			return o(v, s)
 		end
 	end
-	return nrshift
+	return rshift
+end
+local function fixup_arshift(arshift)
+	if arshift(1, 32) == 1 then
+		debug("bitops: arshift wraps at 32, patched.")
+		local o = arshift
+		arshift = function(v, s)
+			if s > 31 then return ((v >= 0x80000000) and 0xFFFFFFFF) or 0 end
+			return o(v, s)
+		end
+	end
+	if arshift(1, -1) ~= 2 then
+		debug("bitops: arshift can't handle negative shifts, patched.")
+		local o = arshift
+		arshift = function(v, s)
+			if s < 0 then return bitlib.lshift(v, -s) end
+			return o(v, s)
+		end
+	end
+	return arshift
 end
 
 -- actual bit op assembly
@@ -280,7 +293,7 @@ bitlib = bit_select({
 	[{'bxor', 1}] = {bit_l53('~'), bit32.bxor, ljbit.bxor, fallback.bxor},
 	[{'lshift', 80, fixup_lshift}] = {bit_l53('<<'), bit32.lshift, ljbit.lshift, fallback.lshift},
 	[{'rshift', 0, fixup_rshift}] = {bit_l53('>>'), bit32.rshift, ljbit.rshift, fallback.rshift},
-	[{'arshift', 0}] = {bit32.arshift, ljbit.arshift, fallback.arshift},
+	[{'arshift', 0, fixup_arshift}] = {bit32.arshift, ljbit.arshift, fallback.arshift},
 })
 
 return bitlib
